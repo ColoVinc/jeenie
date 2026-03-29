@@ -1,10 +1,10 @@
 <?php
 /**
  * Plugin Name: ChatPress
- * Plugin URI:  https://example.com/chatpress
+ * Plugin URI:  https://portfoliovincenzo.netlify.app/
  * Description: Integrazione AI per WordPress - Generazione contenuti e assistente back-office
  * Version:     0.1.0
- * Author:      Il Tuo Nome
+ * Author:      Vincenzo Colonna
  * License:     GPL-2.0+
  * Text Domain: chatpress
  */ 
