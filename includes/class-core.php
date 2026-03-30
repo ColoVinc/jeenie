@@ -2,19 +2,25 @@
 if ( ! defined( 'ABSPATH' ) ) exit;
 
 /**
- * Classe Core = Inizializza tutto il plugin
+ * Classe Core — inizializza tutto il plugin
  */
 class ChatPress_Core {
+
     private static $instance = null;
 
     public static function get_instance() {
-        if (null === self::$instance ) {
+        if ( null === self::$instance ) {
             self::$instance = new self();
         }
         return self::$instance;
     }
 
     private function __construct() {
+        $this->load_dependencies();
+        $this->init_hooks();
+    }
+
+    private function load_dependencies() {
         require_once CHATPRESS_PLUGIN_DIR . 'includes/class-logger.php';
         require_once CHATPRESS_PLUGIN_DIR . 'includes/class-api-connector.php';
         require_once CHATPRESS_PLUGIN_DIR . 'includes/connectors/class-gemini.php';
@@ -42,7 +48,7 @@ class ChatPress_Core {
         load_plugin_textdomain(
             'chatpress',
             false,
-            dirname( plugin_basename( CHATPRESS_PLUGIN_FILE ) ) . '/languages'
+            dirname( plugin_basename( CHATPRESS_PLUGIN_FILE ) ) . '/languages/'
         );
     }
 }

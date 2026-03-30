@@ -3,11 +3,12 @@ if ( ! defined( 'ABSPATH' ) ) exit;
 
 /**
  * Classe base per tutti i connettori API
- * Ogni AI estende questa classe
+ * Ogni provider (Gemini, OpenAI, Claude) estende questa classe
  */
 abstract class ChatPress_API_Connector {
+
     protected $api_key;
-    protected $timeout = 30;
+    protected $timeout = 30; // secondi
 
     public function __construct( $api_key ) {
         $this->api_key = $api_key;
@@ -29,15 +30,15 @@ abstract class ChatPress_API_Connector {
         $response = wp_remote_post( $url, [
             'timeout' => $this->timeout,
             'headers' => array_merge( $default_headers, $headers ),
-            'body' => wp_json_encode( $body ),
+            'body'    => wp_json_encode( $body ),
         ]);
 
-        // Errore di connessione
+        // Errore di connessione (timeout, DNS, ecc.)
         if ( is_wp_error( $response ) ) {
             return [
-                'success'   => false,
-                'error'     => $response->get_error_message(),
-                'code'      => 0,
+                'success' => false,
+                'error'   => $response->get_error_message(),
+                'code'    => 0,
             ];
         }
 
@@ -47,21 +48,21 @@ abstract class ChatPress_API_Connector {
         if ( $code !== 200 ) {
             $error_msg = $body['error']['message'] ?? "Errore HTTP $code";
             return [
-                'success'   => false,
-                'error'     => $error_msg,
-                'code'      => $code,
+                'success' => false,
+                'error'   => $error_msg,
+                'code'    => $code,
             ];
         }
 
         return [
-            'success'   => true,
-            'data'      => $body,
-            'code'      => $code,
+            'success' => true,
+            'data'    => $body,
+            'code'    => $code,
         ];
     }
 
     /**
-     * Formatta la risposta in un formato standard uguale per tutte le AI
+     * Formatta la risposta in un formato standard uguale per tutti i provider
      */
     protected function format_response( string $text, int $prompt_tokens = 0, int $completion_tokens = 0 ): array {
         return [
@@ -78,9 +79,9 @@ abstract class ChatPress_API_Connector {
      */
     protected function format_error( string $message, int $code = 0 ): array {
         return [
-            'success'   => false,
-            'error'     => $message,
-            'code'      => $code,
+            'success' => false,
+            'error'   => $message,
+            'code'    => $code,
         ];
     }
 }

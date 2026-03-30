@@ -1,13 +1,13 @@
 <?php
 /**
  * Plugin Name: ChatPress
- * Plugin URI:  https://portfoliovincenzo.netlify.app/
+ * Plugin URI:  https://example.com/chatpress
  * Description: Integrazione AI per WordPress - Generazione contenuti e assistente back-office
  * Version:     0.1.0
- * Author:      Vincenzo Colonna
+ * Author:      Il Tuo Nome
  * License:     GPL-2.0+
  * Text Domain: chatpress
- */ 
+ */
 
 // Sicurezza: blocca accesso diretto al file
 if ( ! defined( 'ABSPATH' ) ) {
@@ -21,21 +21,21 @@ define( 'CHATPRESS_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 define( 'CHATPRESS_PLUGIN_FILE', __FILE__ );
 
 // Autoload delle classi
-spl_autoload_register( function ( $class ) {
+spl_autoload_register( function( $class ) {
     $prefix = 'ChatPress_';
     if ( strpos( $class, $prefix ) !== 0 ) return;
 
     $map = [
-        'ChatPress_Core'            => CHATPRESS_PLUGIN_DIR . 'includes/class-core.php',
-        'ChatPress_API_Connector'   => CHATPRESS_PLUGIN_DIR . 'includes/class-api-connector.php',
-        'ChatPress_Gemini'          => CHATPRESS_PLUGIN_DIR . 'includes/connectors/class-gemini.php',
-        'ChatPress_Logger'          => CHATPRESS_PLUGIN_DIR . 'includes/class-logger.php',
-        'ChatPress_Admin'           => CHATPRESS_PLUGIN_DIR . 'includes/class-admin.php',
-        'ChatPress_Metabox'         => CHATPRESS_PLUGIN_DIR . 'includes/class-metabox.php',
-        'ChatPress_Chat'            => CHATPRESS_PLUGIN_DIR . 'includes/class-chat.php',
+        'ChatPress_Core'          => CHATPRESS_PLUGIN_DIR . 'includes/class-core.php',
+        'ChatPress_API_Connector' => CHATPRESS_PLUGIN_DIR . 'includes/class-api-connector.php',
+        'ChatPress_Gemini'        => CHATPRESS_PLUGIN_DIR . 'includes/connectors/class-gemini.php',
+        'ChatPress_Logger'        => CHATPRESS_PLUGIN_DIR . 'includes/class-logger.php',
+        'ChatPress_Admin'         => CHATPRESS_PLUGIN_DIR . 'admin/class-admin.php',
+        'ChatPress_Metabox'       => CHATPRESS_PLUGIN_DIR . 'admin/class-metabox.php',
+        'ChatPress_Chat'          => CHATPRESS_PLUGIN_DIR . 'admin/class-chat.php',
     ];
 
-    if (isset( $map[$class] ) && file_exists( $map[$class] ) ) {
+    if ( isset( $map[$class] ) && file_exists( $map[$class] ) ) {
         require_once $map[$class];
     }
 });
@@ -70,10 +70,10 @@ function chatpress_activate() {
     require_once ABSPATH . 'wp-admin/includes/upgrade.php';
     dbDelta( $sql );
 
-    // Salva versione nel db
+    // Salva versione nel DB
     add_option( 'chatpress_version', CHATPRESS_VERSION );
 }
 
 function chatpress_deactivate() {
-    // Per ora non fa nulla
+    // Per ora non fa nulla — i dati vengono mantenuti
 }

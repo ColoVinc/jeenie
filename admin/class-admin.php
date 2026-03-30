@@ -2,7 +2,7 @@
 if ( ! defined( 'ABSPATH' ) ) exit;
 
 /**
- * Classe Admin - gestisce il pannello di impostazioni nel WP Admin
+ * Classe Admin — gestisce il pannello di impostazioni nel WP Admin
  */
 class ChatPress_Admin {
 
@@ -15,8 +15,7 @@ class ChatPress_Admin {
         return self::$instance;
     }
 
-    private function __construct() 
-    {
+    private function __construct() {
         add_action( 'admin_menu', [ $this, 'register_menu' ] );
         add_action( 'admin_init', [ $this, 'register_settings' ] );
         add_action( 'admin_enqueue_scripts', [ $this, 'enqueue_assets' ] );
@@ -42,14 +41,14 @@ class ChatPress_Admin {
             'Impostazioni',
             'Impostazioni',
             'manage_options',
-            'chatpress-settings',
+            'chatpress',
             [ $this, 'render_settings_page' ]
         );
 
         add_submenu_page(
             'chatpress',
-            'Log chiamate',
-            'Log chiamate',
+            'Log Chiamate',
+            'Log Chiamate',
             'manage_options',
             'chatpress-logs',
             [ $this, 'render_logs_page' ]
@@ -57,7 +56,7 @@ class ChatPress_Admin {
     }
 
     /**
-     * Registra le impostazini Wordpress
+     * Registra le impostazioni WordPress
      */
     public function register_settings() {
         // Gruppo impostazioni API
@@ -66,11 +65,11 @@ class ChatPress_Admin {
         ]);
         register_setting( 'chatpress_settings', 'chatpress_default_provider', [
             'sanitize_callback' => 'sanitize_text_field',
-            'default' => 'gemini',
+            'default'           => 'gemini',
         ]);
         register_setting( 'chatpress_settings', 'chatpress_gemini_model', [
             'sanitize_callback' => 'sanitize_text_field',
-            'default' => 'gemini-2.0-flash',
+            'default'           => 'gemini-2.0-flash',
         ]);
 
         // Gruppo contesto sito
@@ -88,7 +87,7 @@ class ChatPress_Admin {
         ]);
         register_setting( 'chatpress_settings', 'chatpress_site_description', [
             'sanitize_callback' => 'sanitize_textarea_field',
-        ]);        
+        ]);
     }
 
     /**
@@ -96,18 +95,31 @@ class ChatPress_Admin {
      */
     public function enqueue_assets( $hook ) {
         if ( strpos( $hook, 'chatpress' ) === false ) return;
-        wp_enqueue_style( 'chatpress-admin', CHATPRESS_PLUGIN_URL . 'assets/css/admin.css', [], CHATPRESS_VERSION );
-        wp_enqueue_script( 'chatpress-admin', CHATPRESS_PLUGIN_URL . 'assets/js/admin.js', [ 'jquery' ], CHATPRESS_VERSION, true );
 
-        // Passa dati PHP -> JS
+        wp_enqueue_style(
+            'chatpress-admin',
+            CHATPRESS_PLUGIN_URL . 'assets/css/admin.css',
+            [],
+            CHATPRESS_VERSION
+        );
+
+        wp_enqueue_script(
+            'chatpress-admin',
+            CHATPRESS_PLUGIN_URL . 'assets/js/admin.js',
+            [ 'jquery' ],
+            CHATPRESS_VERSION,
+            true
+        );
+
+        // Passa dati PHP → JS
         wp_localize_script( 'chatpress-admin', 'chatpress', [
-            'ajaxUrl' => admin_url( 'admin-ajax.php' ),
-            'nonce'   => wp_create_nonce( 'chatpress_nonce' ),
+            'ajax_url' => admin_url( 'admin-ajax.php' ),
+            'nonce'    => wp_create_nonce( 'chatpress_nonce' ),
         ]);
     }
 
     /**
-     * Renderizza la pagina impostaioni
+     * Renderizza la pagina impostazioni
      */
     public function render_settings_page() {
         require_once CHATPRESS_PLUGIN_DIR . 'templates/settings-page.php';
@@ -117,7 +129,7 @@ class ChatPress_Admin {
      * Renderizza la pagina log
      */
     public function render_logs_page() {
-        $logs = ChatPress_Logger::get_logs( 100 );
+        $logs  = ChatPress_Logger::get_logs( 100 );
         $stats = ChatPress_Logger::get_stats();
         require_once CHATPRESS_PLUGIN_DIR . 'templates/logs-page.php';
     }
@@ -129,15 +141,17 @@ class ChatPress_Admin {
         check_ajax_referer( 'chatpress_nonce', 'nonce' );
 
         if ( ! current_user_can( 'manage_options' ) ) {
-            wp_send_json_error( 'Permessi insufficienti' );
+            wp_send_json_error( 'Permessi insufficienti.' );
         }
 
         $api_key = get_option( 'chatpress_gemini_api_key', '' );
+
         if ( empty( $api_key ) ) {
-            wp_send_json_error( 'API key non configurata' );
+            wp_send_json_error( 'API key non configurata.' );
         }
-        $gemini = new ChatPress_Gemini( $api_key );
-        $response = $gemini->generate( 'Rispondi solo con: "ChatPress connesso correttamente"' );
+
+        $gemini   = new ChatPress_Gemini( $api_key );
+        $response = $gemini->generate( 'Rispondi solo con: "ChatPress connesso correttamente!"' );
 
         if ( $response['success'] ) {
             wp_send_json_success( $response['text'] );
@@ -147,21 +161,22 @@ class ChatPress_Admin {
     }
 
     /**
-     * Recupera il contesto del sito da usare nel prompt
+     * Recupera il contesto del sito da usare nei prompt
      */
     public static function get_site_context(): string {
-        $name           = get_option( 'chatpress_site_name', get_bloginfo('name') );
-        $sector         = get_option( 'chatpress_site_sector', '' );
-        $tone           = get_option( 'chatpress_site_tone', '' );
-        $target         = get_option( 'chatpress_site_target', '' );
-        $description    = get_option( 'chatpress_site_description', '' );
+        $name        = get_option( 'chatpress_site_name', get_bloginfo('name') );
+        $sector      = get_option( 'chatpress_site_sector', '' );
+        $tone        = get_option( 'chatpress_site_tone', '' );
+        $target      = get_option( 'chatpress_site_target', '' );
+        $description = get_option( 'chatpress_site_description', '' );
 
         $context = "Stai lavorando per il sito web chiamato \"$name\".";
-        if ( $sector )      $context .= "Settore: $sector. ";
-        if ( $description ) $context .= "Descrizione: $description. ";
-        if ( $tone )        $context .= "Tono di comunicazione: $tone. ";
-        if ( $target )      $context .= "Pubblco target: $target. ";
-        $context .= 'Scrivi sempre in italiano, a meno che non venga specificato diversamente.';
+        if ( $sector )      $context .= " Settore: $sector.";
+        if ( $description ) $context .= " Descrizione: $description.";
+        if ( $tone )        $context .= " Tono di comunicazione: $tone.";
+        if ( $target )      $context .= " Pubblico target: $target.";
+        $context .= " Scrivi sempre in italiano, a meno che non venga specificato diversamente.";
+
         return $context;
     }
 
