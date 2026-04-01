@@ -2,7 +2,7 @@
 if ( ! defined( 'ABSPATH' ) ) exit;
 
 /**
- * Classe Chat — widget AI accessibile da tutto il back-office
+ * Classe Chat — widget AI con tool use nel back-office
  */
 class ChatPress_Chat {
 
@@ -16,8 +16,8 @@ class ChatPress_Chat {
     }
 
     private function __construct() {
-        add_action( 'admin_footer', [ $this, 'render_chat_widget' ] );
-        add_action( 'admin_enqueue_scripts', [ $this, 'enqueue_assets' ] );
+        add_action( 'admin_footer',           [ $this, 'render_chat_widget' ] );
+        add_action( 'admin_enqueue_scripts',  [ $this, 'enqueue_assets' ] );
         add_action( 'wp_ajax_chatpress_chat', [ $this, 'ajax_chat' ] );
     }
 
@@ -38,8 +38,9 @@ class ChatPress_Chat {
         );
 
         wp_localize_script( 'chatpress-chat', 'chatpress_chat', [
-            'ajax_url' => admin_url( 'admin-ajax.php' ),
-            'nonce'    => wp_create_nonce( 'chatpress_nonce' ),
+            'ajax_url'   => admin_url( 'admin-ajax.php' ),
+            'nonce'      => wp_create_nonce( 'chatpress_nonce' ),
+            'session_id' => wp_get_session_token(),
         ]);
     }
 
@@ -48,29 +49,56 @@ class ChatPress_Chat {
     }
 
     /**
-     * AJAX: risponde al messaggio in chat
+     * AJAX: gestisce il messaggio della chat con tool use
      */
     public function ajax_chat() {
         check_ajax_referer( 'chatpress_nonce', 'nonce' );
-        if ( ! current_user_can( 'edit_posts' ) ) wp_send_json_error( 'Permessi insufficienti.' );
+
+        if ( ! current_user_can( 'edit_posts' ) ) {
+            wp_send_json_error( 'Permessi insufficienti.' );
+        }
 
         $message = sanitize_textarea_field( $_POST['message'] ?? '' );
-        if ( empty( $message ) ) wp_send_json_error( 'Messaggio vuoto.' );
+        if ( empty( $message ) ) {
+            wp_send_json_error( 'Messaggio vuoto.' );
+        }
+
+        // Recupera storico conversazione dalla sessione (serializzato in POST)
+        $raw_history = $_POST['history'] ?? '[]';
+        $history     = json_decode( stripslashes( $raw_history ), true );
+        if ( ! is_array( $history ) ) $history = [];
+
+        // Sanifica la history: tieni solo i campi necessari
+        $clean_history = [];
+        foreach ( $history as $turn ) {
+            if ( isset( $turn['role'], $turn['parts'] ) ) {
+                $clean_history[] = [
+                    'role'  => in_array( $turn['role'], [ 'user', 'model' ] ) ? $turn['role'] : 'user',
+                    'parts' => $turn['parts'],
+                ];
+            }
+        }
 
         $connector = ChatPress_Admin::get_connector();
-        if ( ! $connector ) wp_send_json_error( 'API key non configurata. Vai in ChatPress → Impostazioni.' );
+        if ( ! $connector ) {
+            wp_send_json_error( 'API key non configurata. Vai in ChatPress → Impostazioni.' );
+        }
 
-        $context = ChatPress_Admin::get_site_context();
-        $prompt  = "$context\n\nSei un assistente AI integrato nel pannello di amministrazione WordPress. ";
-        $prompt .= "Aiuta l'utente con domande sul sito, generazione contenuti, e suggerimenti. ";
-        $prompt .= "Rispondi in modo conciso e pratico.\n\nUtente: $message";
+        $response = $connector->generate_with_tools( $clean_history, $message );
 
-        $response = $connector->generate( $prompt, [ 'max_tokens' => 800 ] );
-
-        if ( $response['success'] ) {
-            wp_send_json_success( [ 'text' => $response['text'] ] );
-        } else {
+        if ( ! $response['success'] ) {
             wp_send_json_error( $response['error'] );
         }
+
+        // Prepara le nuove voci di history da restituire al frontend
+        $new_history = $clean_history;
+        $new_history[] = [ 'role' => 'user',  'parts' => [ [ 'text' => $message ] ] ];
+        $new_history[] = [ 'role' => 'model', 'parts' => [ [ 'text' => $response['text'] ] ] ];
+
+        wp_send_json_success( [
+            'text'         => $response['text'],
+            'history'      => $new_history,
+            'action_taken' => $response['action_taken'] ?? null,
+        ]);
     }
 }

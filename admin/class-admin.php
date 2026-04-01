@@ -20,6 +20,7 @@ class ChatPress_Admin {
         add_action( 'admin_init', [ $this, 'register_settings' ] );
         add_action( 'admin_enqueue_scripts', [ $this, 'enqueue_assets' ] );
         add_action( 'wp_ajax_chatpress_test_api', [ $this, 'ajax_test_api' ] );
+        add_action( 'wp_ajax_chatpress_clear_logs', [ $this, 'ajax_clear_logs' ] );
     }
 
     /**
@@ -129,8 +130,12 @@ class ChatPress_Admin {
      * Renderizza la pagina log
      */
     public function render_logs_page() {
-        $logs  = ChatPress_Logger::get_logs( 100 );
-        $stats = ChatPress_Logger::get_stats();
+        $per_page    = 30;
+        $current     = max( 1, intval( $_GET['paged'] ?? 1 ) );
+        $total_items = ChatPress_Logger::count_logs();
+        $total_pages = max( 1, ceil( $total_items / $per_page ) );
+        $logs        = ChatPress_Logger::get_logs( $per_page, $current );
+        $stats       = ChatPress_Logger::get_stats();
         require_once CHATPRESS_PLUGIN_DIR . 'templates/logs-page.php';
     }
 
@@ -158,6 +163,20 @@ class ChatPress_Admin {
         } else {
             wp_send_json_error( $response['error'] );
         }
+    }
+
+    /**
+     * AJAX: svuota tutti i log
+     */
+    public function ajax_clear_logs() {
+        check_ajax_referer( 'chatpress_nonce', 'nonce' );
+
+        if ( ! current_user_can( 'manage_options' ) ) {
+            wp_send_json_error( 'Permessi insufficienti.' );
+        }
+
+        ChatPress_Logger::clear_logs();
+        wp_send_json_success( 'Log svuotati.' );
     }
 
     /**

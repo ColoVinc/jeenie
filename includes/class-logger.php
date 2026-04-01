@@ -33,19 +33,29 @@ class ChatPress_Logger {
     }
 
     /**
-     * Recupera gli ultimi N log
+     * Recupera i log con paginazione
      */
-    public static function get_logs( int $limit = 50 ): array {
+    public static function get_logs( int $per_page = 30, int $page = 1 ): array {
         global $wpdb;
-        $table = $wpdb->prefix . 'chatpress_logs';
+        $table  = $wpdb->prefix . 'chatpress_logs';
+        $offset = ( $page - 1 ) * $per_page;
 
         return $wpdb->get_results(
             $wpdb->prepare(
-                "SELECT * FROM $table ORDER BY created_at DESC LIMIT %d",
-                $limit
+                "SELECT * FROM $table ORDER BY created_at DESC LIMIT %d OFFSET %d",
+                $per_page,
+                $offset
             ),
             ARRAY_A
         );
+    }
+
+    /**
+     * Conta il totale dei log
+     */
+    public static function count_logs(): int {
+        global $wpdb;
+        return (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$wpdb->prefix}chatpress_logs" );
     }
 
     /**

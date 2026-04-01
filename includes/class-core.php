@@ -24,6 +24,7 @@ class ChatPress_Core {
         require_once CHATPRESS_PLUGIN_DIR . 'includes/class-logger.php';
         require_once CHATPRESS_PLUGIN_DIR . 'includes/class-api-connector.php';
         require_once CHATPRESS_PLUGIN_DIR . 'includes/connectors/class-gemini.php';
+        require_once CHATPRESS_PLUGIN_DIR . 'includes/class-tools.php';
 
         if ( is_admin() ) {
             require_once CHATPRESS_PLUGIN_DIR . 'admin/class-admin.php';

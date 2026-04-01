@@ -42,7 +42,7 @@ class ChatPress_Metabox {
         wp_enqueue_script(
             'chatpress-metabox',
             CHATPRESS_PLUGIN_URL . 'assets/js/metabox.js',
-            [ 'jquery' ],
+            [ 'jquery', 'wp-blocks', 'wp-data', 'wp-block-editor' ],
             CHATPRESS_VERSION,
             true
         );

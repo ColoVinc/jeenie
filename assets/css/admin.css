@@ -1,3 +1,8 @@
+/* ================================
+   ChatPress — Admin CSS
+   ================================ */
+
+/* Header */
 .chatpress-header {
     background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
     color: #fff;
@@ -14,7 +19,7 @@
     font-size: 24px;
 }
 .chatpress-header p {
-    color: rgba(255, 255, 255, 0.7);
+    color: rgba(255,255,255,0.7);
     margin: 4px 0 0;
     font-size: 14px;
 }
@@ -27,9 +32,7 @@
     margin-bottom: 20px;
 }
 @media (max-width: 900px) {
-    .chatpress-grid {
-        grid-template-columns: 1fr;
-    }
+    .chatpress-grid { grid-template-columns: 1fr; }
 }
 
 /* Card */
@@ -57,12 +60,8 @@
     font-size: 13px;
     font-weight: 500;
 }
-#chatpress-test-result.success {
-    color: #00a32a;
-}
-#chatpress-test-result.error {
-    color: #d63638;
-}
+#chatpress-test-result.success { color: #00a32a; }
+#chatpress-test-result.error   { color: #d63638; }
 
 /* Stats log */
 .chatpress-stats-row {
@@ -83,7 +82,7 @@
     font-size: 32px;
     font-weight: 700;
     color: #0f3460;
-    margin-bottom: 10px;
+    margin-bottom: 10px
 }
 .chatpress-stat-label {
     font-size: 12px;
@@ -100,11 +99,40 @@
     font-size: 12px;
     font-weight: 500;
 }
-.chatpress-badge--success {
-    background: #d1fae5;
-    color: #065f46;
+.chatpress-badge--success { background: #d1fae5; color: #065f46; }
+.chatpress-badge--error   { background: #fee2e2; color: #991b1b; }
+
+/* Paginazione log */
+.chatpress-pagination {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid #f0f0f0;
 }
-.chatpress-badge--error {
-    background: #fee2e2;
-    color: #991b1b;
+.chatpress-pagination-info {
+    font-size: 13px;
+    color: #757575;
+}
+
+/* Toast notification */
+.chatpress-toast {
+    position: fixed;
+    bottom: 30px;
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: #1a1a2e;
+    color: #fff;
+    padding: 10px 20px;
+    border-radius: 6px;
+    font-size: 13px;
+    opacity: 0;
+    transition: opacity 0.3s, transform 0.3s;
+    z-index: 999999;
+}
+.chatpress-toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
 }

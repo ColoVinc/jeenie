@@ -42,19 +42,50 @@ jQuery(function ($) {
         .fail(function () { hideLoading(); showError('Errore di connessione.'); });
     });
 
+    // COPIA CONTENUTO GENERATO
+    $(document).on('click', '.chatpress-copy-content', function () {
+        var text = $('#chatpress-content-result .chatpress-result-text').text();
+        if (!text) return;
+
+        // Copia con fallback per HTTP
+        if (navigator.clipboard && window.isSecureContext) {
+            navigator.clipboard.writeText(text);
+        } else {
+            var $tmp = $('<textarea>').val(text).css({ position: 'fixed', opacity: 0 }).appendTo('body');
+            $tmp[0].select();
+            document.execCommand('copy');
+            $tmp.remove();
+        }
+
+        // Toast notifica in alto a destra
+        var $toast = $('<div>')
+            .text('✅ Testo copiato!')
+            .appendTo('body')
+            .attr('style',
+                'position:fixed;top:32px;right:20px;background:#1a1a2e;color:#fff;' +
+                'padding:10px 20px;border-radius:6px;font-size:13px;z-index:999999;' +
+                'opacity:0;transition:opacity 0.3s;pointer-events:none;'
+            );
+        setTimeout(function () { $toast.css('opacity', 1); }, 10);
+        setTimeout(function () { $toast.css('opacity', 0); setTimeout(function () { $toast.remove(); }, 300); }, 2000);
+    });
+
     // INSERISCI CONTENUTO NELL'EDITOR
     $(document).on('click', '.chatpress-insert-content', function () {
         const text = $('#chatpress-content-result .chatpress-result-text').text();
         if (!text) return;
 
-        // Compatibile sia con editor classico che Gutenberg
-        if (typeof wp !== 'undefined' && wp.data && wp.data.dispatch) {
-            // Gutenberg
-            const blocks = wp.blocks.rawHandler({ HTML: '<p>' + text.replace(/\n/g, '</p><p>') + '</p>' });
-            wp.data.dispatch('core/block-editor').insertBlocks(blocks);
-        } else if (typeof tinyMCE !== 'undefined' && tinyMCE.activeEditor) {
-            // Editor classico
+        // Editor classico (TinyMCE) — controlla per primo
+        if (typeof tinyMCE !== 'undefined' && tinyMCE.activeEditor && !tinyMCE.activeEditor.isHidden()) {
             tinyMCE.activeEditor.execCommand('mceInsertContent', false, text.replace(/\n/g, '<br>'));
+        } else if ($('#content').length) {
+            // Modalità testo dell'editor classico
+            var $content = $('#content');
+            $content.val($content.val() + '\n' + text);
+        } else if (typeof wp !== 'undefined' && wp.data && wp.data.dispatch && wp.blocks) {
+            // Gutenberg
+            var blocks = wp.blocks.rawHandler({ HTML: '<p>' + text.replace(/\n/g, '</p><p>') + '</p>' });
+            wp.data.dispatch('core/block-editor').insertBlocks(blocks);
         }
     });
 
