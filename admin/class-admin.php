@@ -4,7 +4,7 @@ if ( ! defined( 'ABSPATH' ) ) exit;
 /**
  * Classe Admin — gestisce il pannello di impostazioni nel WP Admin
  */
-class ChatPress_Admin {
+class SiteGenie_Admin {
 
     private static $instance = null;
 
@@ -19,8 +19,36 @@ class ChatPress_Admin {
         add_action( 'admin_menu', [ $this, 'register_menu' ] );
         add_action( 'admin_init', [ $this, 'register_settings' ] );
         add_action( 'admin_enqueue_scripts', [ $this, 'enqueue_assets' ] );
-        add_action( 'wp_ajax_chatpress_test_api', [ $this, 'ajax_test_api' ] );
-        add_action( 'wp_ajax_chatpress_clear_logs', [ $this, 'ajax_clear_logs' ] );
+        add_action( 'admin_notices', [ $this, 'activation_notice' ] );
+        add_action( 'admin_notices', [ $this, 'missing_key_notice' ] );
+        add_action( 'wp_ajax_sitegenie_test_api', [ $this, 'ajax_test_api' ] );
+        add_action( 'wp_ajax_sitegenie_clear_logs', [ $this, 'ajax_clear_logs' ] );
+    }
+
+    /**
+     * Notice dopo attivazione plugin
+     */
+    public function activation_notice() {
+        if ( ! get_transient( 'sitegenie_activated' ) ) return;
+        delete_transient( 'sitegenie_activated' );
+        $url = admin_url( 'admin.php?page=sitegenie' );
+        echo '<div class="notice notice-success is-dismissible"><p><strong>🤖 ' . esc_html__( 'SiteGenie attivato!', 'sitegenie' ) . '</strong> <a href="' . esc_url( $url ) . '">' . esc_html__( 'Configura la tua API key', 'sitegenie' ) . '</a> ' . esc_html__( 'per iniziare.', 'sitegenie' ) . '</p></div>';
+    }
+
+    /**
+     * Notice se nessuna API key è configurata
+     */
+    public function missing_key_notice() {
+        if ( get_transient( 'sitegenie_activated' ) ) return;
+        $screen = get_current_screen();
+        if ( $screen && strpos( $screen->id, 'sitegenie' ) !== false ) return;
+
+        $provider = get_option( 'sitegenie_default_provider', 'gemini' );
+        $key      = get_option( 'sitegenie_' . $provider . '_api_key', '' );
+        if ( ! empty( $key ) ) return;
+
+        $url = admin_url( 'admin.php?page=sitegenie' );
+        echo '<div class="notice notice-warning is-dismissible"><p><strong>🤖 SiteGenie:</strong> ' . esc_html__( 'API key non configurata.', 'sitegenie' ) . ' <a href="' . esc_url( $url ) . '">' . esc_html__( 'Vai alle impostazioni', 'sitegenie' ) . '</a>.</p></div>';
     }
 
     /**
@@ -28,30 +56,30 @@ class ChatPress_Admin {
      */
     public function register_menu() {
         add_menu_page(
-            'ChatPress',
-            'ChatPress',
+            'SiteGenie',
+            'SiteGenie',
             'manage_options',
-            'chatpress',
+            'sitegenie',
             [ $this, 'render_settings_page' ],
             'dashicons-superhero',
             30
         );
 
         add_submenu_page(
-            'chatpress',
+            'sitegenie',
             'Impostazioni',
             'Impostazioni',
             'manage_options',
-            'chatpress',
+            'sitegenie',
             [ $this, 'render_settings_page' ]
         );
 
         add_submenu_page(
-            'chatpress',
+            'sitegenie',
             'Log Chiamate',
             'Log Chiamate',
             'manage_options',
-            'chatpress-logs',
+            'sitegenie-logs',
             [ $this, 'render_logs_page' ]
         );
     }
@@ -61,32 +89,58 @@ class ChatPress_Admin {
      */
     public function register_settings() {
         // Gruppo impostazioni API
-        register_setting( 'chatpress_settings', 'chatpress_gemini_api_key', [
+        register_setting( 'sitegenie_settings', 'sitegenie_gemini_api_key', [
             'sanitize_callback' => 'sanitize_text_field',
         ]);
-        register_setting( 'chatpress_settings', 'chatpress_default_provider', [
+        register_setting( 'sitegenie_settings', 'sitegenie_openai_api_key', [
+            'sanitize_callback' => 'sanitize_text_field',
+        ]);
+        register_setting( 'sitegenie_settings', 'sitegenie_default_provider', [
             'sanitize_callback' => 'sanitize_text_field',
             'default'           => 'gemini',
         ]);
-        register_setting( 'chatpress_settings', 'chatpress_gemini_model', [
+        register_setting( 'sitegenie_settings', 'sitegenie_gemini_model', [
             'sanitize_callback' => 'sanitize_text_field',
             'default'           => 'gemini-2.0-flash',
         ]);
+        register_setting( 'sitegenie_settings', 'sitegenie_openai_model', [
+            'sanitize_callback' => 'sanitize_text_field',
+            'default'           => 'gpt-4o-mini',
+        ]);
+        register_setting( 'sitegenie_settings', 'sitegenie_claude_api_key', [
+            'sanitize_callback' => 'sanitize_text_field',
+        ]);
+        register_setting( 'sitegenie_settings', 'sitegenie_claude_model', [
+            'sanitize_callback' => 'sanitize_text_field',
+            'default'           => 'claude-sonnet-4-20250514',
+        ]);
+        register_setting( 'sitegenie_settings', 'sitegenie_rate_limit', [
+            'sanitize_callback' => 'absint',
+            'default'           => 30,
+        ]);
+        register_setting( 'sitegenie_settings', 'sitegenie_auto_delete_days', [
+            'sanitize_callback' => 'absint',
+            'default'           => 0,
+        ]);
+        register_setting( 'sitegenie_settings', 'sitegenie_api_timeout', [
+            'sanitize_callback' => 'absint',
+            'default'           => 30,
+        ]);
 
         // Gruppo contesto sito
-        register_setting( 'chatpress_settings', 'chatpress_site_name', [
+        register_setting( 'sitegenie_settings', 'sitegenie_site_name', [
             'sanitize_callback' => 'sanitize_text_field',
         ]);
-        register_setting( 'chatpress_settings', 'chatpress_site_sector', [
+        register_setting( 'sitegenie_settings', 'sitegenie_site_sector', [
             'sanitize_callback' => 'sanitize_text_field',
         ]);
-        register_setting( 'chatpress_settings', 'chatpress_site_tone', [
+        register_setting( 'sitegenie_settings', 'sitegenie_site_tone', [
             'sanitize_callback' => 'sanitize_text_field',
         ]);
-        register_setting( 'chatpress_settings', 'chatpress_site_target', [
+        register_setting( 'sitegenie_settings', 'sitegenie_site_target', [
             'sanitize_callback' => 'sanitize_text_field',
         ]);
-        register_setting( 'chatpress_settings', 'chatpress_site_description', [
+        register_setting( 'sitegenie_settings', 'sitegenie_site_description', [
             'sanitize_callback' => 'sanitize_textarea_field',
         ]);
     }
@@ -95,27 +149,30 @@ class ChatPress_Admin {
      * Carica CSS e JS solo nelle pagine del plugin
      */
     public function enqueue_assets( $hook ) {
-        if ( strpos( $hook, 'chatpress' ) === false ) return;
+        if ( strpos( $hook, 'sitegenie' ) === false ) return;
+
+        // Bootstrap JS (CSS già caricato globalmente dal chat widget)
+        wp_enqueue_script( 'bootstrap', SITEGENIE_PLUGIN_URL . 'assets/vendor/bootstrap.bundle.min.js', [], '5.3.3', true );
 
         wp_enqueue_style(
-            'chatpress-admin',
-            CHATPRESS_PLUGIN_URL . 'assets/css/admin.css',
+            'sitegenie-admin',
+            SITEGENIE_PLUGIN_URL . 'assets/css/admin.css',
             [],
-            CHATPRESS_VERSION
+            SITEGENIE_VERSION
         );
 
         wp_enqueue_script(
-            'chatpress-admin',
-            CHATPRESS_PLUGIN_URL . 'assets/js/admin.js',
+            'sitegenie-admin',
+            SITEGENIE_PLUGIN_URL . 'assets/js/admin.js',
             [ 'jquery' ],
-            CHATPRESS_VERSION,
+            SITEGENIE_VERSION,
             true
         );
 
         // Passa dati PHP → JS
-        wp_localize_script( 'chatpress-admin', 'chatpress', [
+        wp_localize_script( 'sitegenie-admin', 'sitegenie', [
             'ajax_url' => admin_url( 'admin-ajax.php' ),
-            'nonce'    => wp_create_nonce( 'chatpress_nonce' ),
+            'nonce'    => wp_create_nonce( 'sitegenie_nonce' ),
         ]);
     }
 
@@ -123,7 +180,7 @@ class ChatPress_Admin {
      * Renderizza la pagina impostazioni
      */
     public function render_settings_page() {
-        require_once CHATPRESS_PLUGIN_DIR . 'templates/settings-page.php';
+        require_once SITEGENIE_PLUGIN_DIR . 'templates/settings-page.php';
     }
 
     /**
@@ -131,32 +188,30 @@ class ChatPress_Admin {
      */
     public function render_logs_page() {
         $per_page    = 30;
-        $current     = max( 1, intval( $_GET['paged'] ?? 1 ) );
-        $total_items = ChatPress_Logger::count_logs();
+        $current     = isset( $_GET['paged'] ) ? absint( $_GET['paged'] ) : 1; // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- pagination, read-only
+        $total_items = SiteGenie_Logger::count_logs();
         $total_pages = max( 1, ceil( $total_items / $per_page ) );
-        $logs        = ChatPress_Logger::get_logs( $per_page, $current );
-        $stats       = ChatPress_Logger::get_stats();
-        require_once CHATPRESS_PLUGIN_DIR . 'templates/logs-page.php';
+        $logs        = SiteGenie_Logger::get_logs( $per_page, $current );
+        $stats       = SiteGenie_Logger::get_stats();
+        require_once SITEGENIE_PLUGIN_DIR . 'templates/logs-page.php';
     }
 
     /**
      * AJAX: testa la connessione API
      */
     public function ajax_test_api() {
-        check_ajax_referer( 'chatpress_nonce', 'nonce' );
+        check_ajax_referer( 'sitegenie_nonce', 'nonce' );
 
         if ( ! current_user_can( 'manage_options' ) ) {
-            wp_send_json_error( 'Permessi insufficienti.' );
+            wp_send_json_error( __( 'Permessi insufficienti.', 'sitegenie' ) );
         }
 
-        $api_key = get_option( 'chatpress_gemini_api_key', '' );
-
-        if ( empty( $api_key ) ) {
-            wp_send_json_error( 'API key non configurata.' );
+        $connector = self::get_connector();
+        if ( ! $connector ) {
+            wp_send_json_error( __( 'API key non configurata.', 'sitegenie' ) );
         }
 
-        $gemini   = new ChatPress_Gemini( $api_key );
-        $response = $gemini->generate( 'Rispondi solo con: "ChatPress connesso correttamente!"' );
+        $response = $connector->generate( 'Rispondi solo con: "SiteGenie connesso correttamente!"' );
 
         if ( $response['success'] ) {
             wp_send_json_success( $response['text'] );
@@ -169,13 +224,13 @@ class ChatPress_Admin {
      * AJAX: svuota tutti i log
      */
     public function ajax_clear_logs() {
-        check_ajax_referer( 'chatpress_nonce', 'nonce' );
+        check_ajax_referer( 'sitegenie_nonce', 'nonce' );
 
         if ( ! current_user_can( 'manage_options' ) ) {
             wp_send_json_error( 'Permessi insufficienti.' );
         }
 
-        ChatPress_Logger::clear_logs();
+        SiteGenie_Logger::clear_logs();
         wp_send_json_success( 'Log svuotati.' );
     }
 
@@ -183,11 +238,11 @@ class ChatPress_Admin {
      * Recupera il contesto del sito da usare nei prompt
      */
     public static function get_site_context(): string {
-        $name        = get_option( 'chatpress_site_name', get_bloginfo('name') );
-        $sector      = get_option( 'chatpress_site_sector', '' );
-        $tone        = get_option( 'chatpress_site_tone', '' );
-        $target      = get_option( 'chatpress_site_target', '' );
-        $description = get_option( 'chatpress_site_description', '' );
+        $name        = get_option( 'sitegenie_site_name', get_bloginfo('name') );
+        $sector      = get_option( 'sitegenie_site_sector', '' );
+        $tone        = get_option( 'sitegenie_site_tone', '' );
+        $target      = get_option( 'sitegenie_site_target', '' );
+        $description = get_option( 'sitegenie_site_description', '' );
 
         $context = "Stai lavorando per il sito web chiamato \"$name\".";
         if ( $sector )      $context .= " Settore: $sector.";
@@ -202,9 +257,47 @@ class ChatPress_Admin {
     /**
      * Crea e restituisce il connettore AI attivo
      */
-    public static function get_connector(): ?ChatPress_Gemini {
-        $api_key = get_option( 'chatpress_gemini_api_key', '' );
+    public static function get_connector(): ?SiteGenie_API_Connector {
+        $provider = get_option( 'sitegenie_default_provider', 'gemini' );
+
+        if ( $provider === 'openai' ) {
+            $api_key = get_option( 'sitegenie_openai_api_key', '' );
+            if ( empty( $api_key ) ) return null;
+            $connector = new SiteGenie_OpenAI( $api_key );
+            $connector->set_model( get_option( 'sitegenie_openai_model', 'gpt-4o-mini' ) );
+            return $connector;
+        }
+
+        if ( $provider === 'claude' ) {
+            $api_key = get_option( 'sitegenie_claude_api_key', '' );
+            if ( empty( $api_key ) ) return null;
+            $connector = new SiteGenie_Claude( $api_key );
+            $connector->set_model( get_option( 'sitegenie_claude_model', 'claude-sonnet-4-20250514' ) );
+            return $connector;
+        }
+
+        $api_key = get_option( 'sitegenie_gemini_api_key', '' );
         if ( empty( $api_key ) ) return null;
-        return new ChatPress_Gemini( $api_key );
+        $connector = new SiteGenie_Gemini( $api_key );
+        $connector->set_model( get_option( 'sitegenie_gemini_model', 'gemini-2.5-flash-lite' ) );
+        return $connector;
+    }
+
+    /**
+     * Controlla e incrementa il rate limit per l'utente corrente.
+     * Restituisce true se il limite è superato.
+     */
+    public static function is_rate_limited(): bool {
+        $limit = (int) get_option( 'sitegenie_rate_limit', 30 );
+        if ( $limit <= 0 ) return false; // 0 = disabilitato
+
+        $user_id = get_current_user_id();
+        $key     = 'sitegenie_rl_' . $user_id;
+        $count   = (int) get_transient( $key );
+
+        if ( $count >= $limit ) return true;
+
+        set_transient( $key, $count + 1, HOUR_IN_SECONDS );
+        return false;
     }
 }
