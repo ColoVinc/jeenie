@@ -4,10 +4,19 @@ if ( ! defined( 'ABSPATH' ) ) exit;
 /**
  * Connettore per Google Gemini API — con Function Calling
  */
-class ChatPress_Gemini extends ChatPress_API_Connector {
+class SiteGenie_Gemini extends SiteGenie_API_Connector {
 
-    private $model    = 'gemini-2.5-flash-lite';
     private $api_base = 'https://generativelanguage.googleapis.com/v1beta/models/';
+
+    /**
+     * Costruisce l'URL dell'API e gli header con la chiave nell'header HTTP
+     */
+    private function build_request( string $model ): array {
+        return [
+            'url'     => $this->api_base . $model . ':generateContent',
+            'headers' => [ 'x-goog-api-key' => $this->api_key ],
+        ];
+    }
 
     /**
      * Genera testo semplice (senza tool use) — usato per metabox e test
@@ -17,8 +26,8 @@ class ChatPress_Gemini extends ChatPress_API_Connector {
             return $this->format_error( 'API key Gemini non configurata.' );
         }
 
-        $model = $options['model'] ?? $this->model;
-        $url   = $this->api_base . $model . ':generateContent?key=' . $this->api_key;
+        $model   = $options['model'] ?? $this->model;
+        $request = $this->build_request( $model );
 
         $body = [
             'contents' => [
@@ -30,10 +39,10 @@ class ChatPress_Gemini extends ChatPress_API_Connector {
             ],
         ];
 
-        $response = $this->http_post( $url, $body );
+        $response = $this->http_post( $request['url'], $body, $request['headers'] );
 
         if ( ! $response['success'] ) {
-            ChatPress_Logger::log( 'gemini', 0, 0, 'error', $response['error'] );
+            SiteGenie_Logger::log( 'gemini', 0, 0, 'error', $response['error'] );
             return $this->format_error( $response['error'], $response['code'] );
         }
 
@@ -42,13 +51,13 @@ class ChatPress_Gemini extends ChatPress_API_Connector {
 
         if ( empty( $text ) ) {
             $error = 'Risposta vuota da Gemini.';
-            ChatPress_Logger::log( 'gemini', 0, 0, 'error', $error );
+            SiteGenie_Logger::log( 'gemini', 0, 0, 'error', $error );
             return $this->format_error( $error );
         }
 
         $pt = $data['usageMetadata']['promptTokenCount']     ?? 0;
         $ct = $data['usageMetadata']['candidatesTokenCount'] ?? 0;
-        ChatPress_Logger::log( 'gemini', $pt, $ct, 'success' );
+        SiteGenie_Logger::log( 'gemini', $pt, $ct, 'success' );
 
         return $this->format_response( $text, $pt, $ct );
     }
@@ -67,8 +76,8 @@ class ChatPress_Gemini extends ChatPress_API_Connector {
             return $this->format_error( 'API key Gemini non configurata.' );
         }
 
-        $model = $options['model'] ?? $this->model;
-        $url   = $this->api_base . $model . ':generateContent?key=' . $this->api_key;
+        $model   = $options['model'] ?? $this->model;
+        $request = $this->build_request( $model );
 
         $contents   = $history;
         $contents[] = [
@@ -76,10 +85,11 @@ class ChatPress_Gemini extends ChatPress_API_Connector {
             'parts' => [ [ 'text' => $message ] ],
         ];
 
-        $system_text  = ChatPress_Admin::get_site_context();
+        $system_text  = SiteGenie_Admin::get_site_context();
         $system_text .= "\n\nSei un assistente AI integrato nel pannello di amministrazione WordPress. ";
         $system_text .= "Puoi eseguire azioni reali sul sito usando i tool disponibili. ";
-        $system_text .= "Quando l'utente chiede di creare, modificare, eliminare o recuperare contenuti, usa sempre i tool appropriati. ";
+        $system_text .= "Quando l'utente chiede di creare, modificare, eliminare o recuperare contenuti, usa SEMPRE i tool appropriati. NON chiedere mai all'utente di eseguire comandi o tool. ";
+        $system_text .= "REGOLA FONDAMENTALE: quando l'utente menziona un Custom Post Type (qualsiasi tipo diverso da 'post' e 'page'), devi IMMEDIATAMENTE chiamare il tool get_custom_post_types per scoprire i CPT e campi ACF, poi chiamare create_custom_post o update_custom_post. Fallo tu autonomamente, senza chiedere nulla all'utente. ";
         $system_text .= "Dopo aver eseguito un'azione, conferma cosa hai fatto in modo chiaro e conciso. ";
         $system_text .= "Rispondi sempre in italiano.";
 
@@ -89,7 +99,7 @@ class ChatPress_Gemini extends ChatPress_API_Connector {
             ],
             'contents'         => $contents,
             'tools'            => [
-                [ 'function_declarations' => ChatPress_Tools::get_declarations() ]
+                [ 'function_declarations' => SiteGenie_Tools::get_declarations() ]
             ],
             'generationConfig' => [
                 'maxOutputTokens' => $options['max_tokens']  ?? 1024,
@@ -97,82 +107,79 @@ class ChatPress_Gemini extends ChatPress_API_Connector {
             ],
         ];
 
-        // ── PRIMO TURNO ───────────────────────────────────────────────
-        $response  = $this->http_post( $url, $body );
+        // ── LOOP TOOL CALLING (supporta più turni) ─────────────────
+        $total_pt = 0;
+        $total_ct = 0;
+        $last_action = null;
+        $max_turns = 5;
 
-        if ( ! $response['success'] ) {
-            ChatPress_Logger::log( 'gemini', 0, 0, 'error', $response['error'] );
-            return $this->format_error( $response['error'], $response['code'] );
-        }
+        for ( $turn = 0; $turn < $max_turns; $turn++ ) {
+            $body['contents'] = $contents;
+            $response = $this->http_post( $request['url'], $body, $request['headers'] );
 
-        $data      = $response['data'];
-        $candidate = $data['candidates'][0] ?? [];
-        $parts     = $candidate['content']['parts'] ?? [];
-        $pt        = $data['usageMetadata']['promptTokenCount']     ?? 0;
-        $ct        = $data['usageMetadata']['candidatesTokenCount'] ?? 0;
-
-        // Cerca function call nella risposta
-        $function_call = null;
-        foreach ( $parts as $part ) {
-            if ( isset( $part['functionCall'] ) ) {
-                $function_call = $part['functionCall'];
-                break;
+            if ( ! $response['success'] ) {
+                SiteGenie_Logger::log( 'gemini', $total_pt, $total_ct, 'error', $response['error'] );
+                return $this->format_error( $response['error'], $response['code'] );
             }
-        }
 
-        // Nessun tool call: risposta testuale diretta
-        if ( ! $function_call ) {
-            $text = $parts[0]['text'] ?? '';
-            ChatPress_Logger::log( 'gemini', $pt, $ct, 'success' );
-            return $this->format_response( $text, $pt, $ct );
-        }
+            $data  = $response['data'];
+            $parts = $data['candidates'][0]['content']['parts'] ?? [];
+            $total_pt += $data['usageMetadata']['promptTokenCount']     ?? 0;
+            $total_ct += $data['usageMetadata']['candidatesTokenCount'] ?? 0;
 
-        // ── ESEGUI IL TOOL ────────────────────────────────────────────
-        $tool_name   = $function_call['name'];
-        $tool_args   = $function_call['args'] ?? [];
-        $tool_result = ChatPress_Tools::execute( $tool_name, $tool_args );
+            // Cerca function call
+            $function_call = null;
+            foreach ( $parts as $part ) {
+                if ( isset( $part['functionCall'] ) ) {
+                    $function_call = $part['functionCall'];
+                    break;
+                }
+            }
 
-        // ── SECONDO TURNO: rimanda risultato a Gemini ─────────────────
-        $contents[] = [
-            'role'  => 'model',
-            'parts' => [ [ 'functionCall' => $function_call ] ],
-        ];
-        $contents[] = [
-            'role'  => 'user',
-            'parts' => [
-                [
-                    'functionResponse' => [
-                        'name'     => $tool_name,
-                        'response' => $tool_result,
+            // Nessun tool call: risposta testuale finale
+            if ( ! $function_call ) {
+                $text = $parts[0]['text'] ?? 'Operazione completata.';
+                SiteGenie_Logger::log( 'gemini', $total_pt, $total_ct, 'success' );
+                $result = $this->format_response( $text, $total_pt, $total_ct );
+                if ( $last_action ) $result['action_taken'] = $last_action;
+                return $result;
+            }
+
+            // Esegui il tool
+            $tool_name   = $function_call['name'];
+            $tool_args   = $function_call['args'] ?? [];
+            $tool_result = SiteGenie_Tools::execute( $tool_name, $tool_args );
+
+            // Tieni traccia dell'ultima azione "mutativa"
+            if ( in_array( $tool_name, [ 'create_post', 'update_post', 'delete_post', 'create_custom_post', 'update_custom_post' ] ) ) {
+                $last_action = [ 'tool' => $tool_name, 'result' => $tool_result ];
+            }
+
+            // Aggiungi alla conversazione e continua il loop
+            $fc_part = [ 'functionCall' => [ 'name' => $tool_name, 'args' => (object) $tool_args ] ];
+            $contents[] = [
+                'role'  => 'model',
+                'parts' => [ $fc_part ],
+            ];
+            $contents[] = [
+                'role'  => 'user',
+                'parts' => [
+                    [
+                        'functionResponse' => [
+                            'name'     => $tool_name,
+                            'response' => $tool_result,
+                        ]
                     ]
-                ]
-            ],
-        ];
-
-        $body['contents'] = $contents;
-        $response2        = $this->http_post( $url, $body );
-
-        if ( ! $response2['success'] ) {
-            $fallback = $tool_result['message'] ?? ( $tool_result['error'] ?? 'Operazione completata.' );
-            ChatPress_Logger::log( 'gemini', $pt, $ct, 'success' );
-            return array_merge(
-                $this->format_response( $fallback, $pt, $ct ),
-                [ 'action_taken' => [ 'tool' => $tool_name, 'result' => $tool_result ] ]
-            );
+                ],
+            ];
         }
 
-        $data2  = $response2['data'];
-        $parts2 = $data2['candidates'][0]['content']['parts'] ?? [];
-        $text2  = $parts2[0]['text'] ?? ( $tool_result['message'] ?? 'Operazione completata.' );
-        $pt2    = $data2['usageMetadata']['promptTokenCount']     ?? 0;
-        $ct2    = $data2['usageMetadata']['candidatesTokenCount'] ?? 0;
-
-        ChatPress_Logger::log( 'gemini', $pt + $pt2, $ct + $ct2, 'success' );
-
-        return array_merge(
-            $this->format_response( $text2, $pt + $pt2, $ct + $ct2 ),
-            [ 'action_taken' => [ 'tool' => $tool_name, 'result' => $tool_result ] ]
-        );
+        // Fallback se raggiunto il limite di turni
+        $fallback = $last_action['result']['message'] ?? 'Operazione completata.';
+        SiteGenie_Logger::log( 'gemini', $total_pt, $total_ct, 'success' );
+        $result = $this->format_response( $fallback, $total_pt, $total_ct );
+        if ( $last_action ) $result['action_taken'] = $last_action;
+        return $result;
     }
 
     public static function get_models(): array {
