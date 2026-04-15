@@ -5,19 +5,33 @@ if ( ! defined( 'ABSPATH' ) ) exit;
  * Classe base per tutti i connettori API
  * Ogni provider (Gemini, OpenAI, Claude) estende questa classe
  */
-abstract class ChatPress_API_Connector {
+abstract class SiteGenie_API_Connector {
 
     protected $api_key;
-    protected $timeout = 30; // secondi
+    protected $timeout = 30;
+    protected $model   = '';
 
     public function __construct( $api_key ) {
         $this->api_key = $api_key;
+        $this->timeout = (int) get_option( 'sitegenie_api_timeout', 30 ) ?: 30;
+    }
+
+    /**
+     * Imposta il modello da usare
+     */
+    public function set_model( string $model ): void {
+        $this->model = $model;
     }
 
     /**
      * Metodo principale da implementare in ogni connettore
      */
     abstract public function generate( string $prompt, array $options = [] ): array;
+
+    /**
+     * Genera con function calling — da implementare in ogni connettore
+     */
+    abstract public function generate_with_tools( array $history, string $message, array $options = [] ): array;
 
     /**
      * Esegue una chiamata HTTP POST verso l'API
@@ -78,9 +92,20 @@ abstract class ChatPress_API_Connector {
      * Formatta un errore in formato standard
      */
     protected function format_error( string $message, int $code = 0 ): array {
+        // Mappa codici HTTP a messaggi utente
+        $user_message = $message;
+        switch ( $code ) {
+            case 401: $user_message = __( 'API key non valida. Controlla la chiave nelle impostazioni di SiteGenie.', 'sitegenie' ); break;
+            case 403: $user_message = __( 'Accesso negato dall\'API. Verifica i permessi della tua API key.', 'sitegenie' ); break;
+            case 429: $user_message = __( 'Quota API esaurita o troppe richieste. Riprova tra qualche minuto.', 'sitegenie' ); break;
+            case 500:
+            case 502:
+            case 503: $user_message = __( 'Il servizio AI è temporaneamente non disponibile. Riprova tra poco.', 'sitegenie' ); break;
+        }
+
         return [
             'success' => false,
-            'error'   => $message,
+            'error'   => $user_message,
             'code'    => $code,
         ];
     }
