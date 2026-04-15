@@ -4,7 +4,7 @@ if ( ! defined( 'ABSPATH' ) ) exit;
 /**
  * Classe Core — inizializza tutto il plugin
  */
-class ChatPress_Core {
+class SiteGenie_Core {
 
     private static $instance = null;
 
@@ -16,40 +16,32 @@ class ChatPress_Core {
     }
 
     private function __construct() {
-        $this->load_dependencies();
         $this->init_hooks();
     }
 
-    private function load_dependencies() {
-        require_once CHATPRESS_PLUGIN_DIR . 'includes/class-logger.php';
-        require_once CHATPRESS_PLUGIN_DIR . 'includes/class-api-connector.php';
-        require_once CHATPRESS_PLUGIN_DIR . 'includes/connectors/class-gemini.php';
-        require_once CHATPRESS_PLUGIN_DIR . 'includes/class-tools.php';
-
-        if ( is_admin() ) {
-            require_once CHATPRESS_PLUGIN_DIR . 'admin/class-admin.php';
-            require_once CHATPRESS_PLUGIN_DIR . 'admin/class-metabox.php';
-            require_once CHATPRESS_PLUGIN_DIR . 'admin/class-chat.php';
-        }
-    }
-
     private function init_hooks() {
-        // Carica textdomain per traduzioni
-        add_action( 'init', [ $this, 'load_textdomain' ] );
+        add_action( 'sitegenie_daily_cleanup', [ $this, 'run_cleanup' ] );
+        add_action( 'admin_init', [ $this, 'add_privacy_policy' ] );
 
-        // Inizializza componenti admin
         if ( is_admin() ) {
-            ChatPress_Admin::get_instance();
-            ChatPress_Metabox::get_instance();
-            ChatPress_Chat::get_instance();
+            SiteGenie_Admin::get_instance();
+            SiteGenie_Metabox::get_instance();
+            SiteGenie_Chat::get_instance();
         }
     }
 
-    public function load_textdomain() {
-        load_plugin_textdomain(
-            'chatpress',
-            false,
-            dirname( plugin_basename( CHATPRESS_PLUGIN_FILE ) ) . '/languages/'
-        );
+    public function run_cleanup() {
+        $days = (int) get_option( 'sitegenie_auto_delete_days', 0 );
+        if ( $days > 0 ) {
+            SiteGenie_History::delete_older_than( $days );
+        }
+    }
+
+    public function add_privacy_policy() {
+        if ( ! function_exists( 'wp_add_privacy_policy_content' ) ) return;
+
+        $content = __( 'Questo sito utilizza il plugin SiteGenie, che invia i messaggi della chat e il contesto del sito (nome, settore, tono di comunicazione) al provider AI selezionato dall\'amministratore (Google Gemini, OpenAI o Anthropic Claude) per generare risposte. Nessun dato viene inviato finché un utente non utilizza attivamente la chat o le funzionalità di generazione contenuti. Le conversazioni vengono salvate nel database del sito. Per maggiori informazioni, consulta le privacy policy dei rispettivi provider.', 'sitegenie' );
+
+        wp_add_privacy_policy_content( 'SiteGenie', wp_kses_post( wpautop( $content ) ) );
     }
 }
