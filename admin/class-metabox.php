@@ -4,7 +4,7 @@ if ( ! defined( 'ABSPATH' ) ) exit;
 /**
  * Classe Metabox — aggiunge il pannello AI nell'editor post/pagina
  */
-class ChatPress_Metabox {
+class SiteGenie_Metabox {
 
     private static $instance = null;
 
@@ -18,16 +18,16 @@ class ChatPress_Metabox {
     private function __construct() {
         add_action( 'add_meta_boxes', [ $this, 'register_metabox' ] );
         add_action( 'admin_enqueue_scripts', [ $this, 'enqueue_assets' ] );
-        add_action( 'wp_ajax_chatpress_generate_content', [ $this, 'ajax_generate_content' ] );
-        add_action( 'wp_ajax_chatpress_generate_seo', [ $this, 'ajax_generate_seo' ] );
+        add_action( 'wp_ajax_sitegenie_generate_content', [ $this, 'ajax_generate_content' ] );
+        add_action( 'wp_ajax_sitegenie_generate_seo', [ $this, 'ajax_generate_seo' ] );
     }
 
     public function register_metabox() {
-        $screens = [ 'post', 'page' ];
+        $screens = get_post_types( [ 'public' => true ], 'names' );
         foreach ( $screens as $screen ) {
             add_meta_box(
-                'chatpress_metabox',
-                '🤖 ChatPress — Assistente AI',
+                'sitegenie_metabox',
+                '🤖 SiteGenie — Assistente AI',
                 [ $this, 'render_metabox' ],
                 $screen,
                 'side',
@@ -40,40 +40,42 @@ class ChatPress_Metabox {
         if ( ! in_array( $hook, [ 'post.php', 'post-new.php' ] ) ) return;
 
         wp_enqueue_script(
-            'chatpress-metabox',
-            CHATPRESS_PLUGIN_URL . 'assets/js/metabox.js',
+            'sitegenie-metabox',
+            SITEGENIE_PLUGIN_URL . 'assets/js/metabox.js',
             [ 'jquery', 'wp-blocks', 'wp-data', 'wp-block-editor' ],
-            CHATPRESS_VERSION,
+            SITEGENIE_VERSION,
             true
         );
 
-        wp_localize_script( 'chatpress-metabox', 'chatpress', [
+        wp_localize_script( 'sitegenie-metabox', 'sitegenie', [
             'ajax_url' => admin_url( 'admin-ajax.php' ),
-            'nonce'    => wp_create_nonce( 'chatpress_nonce' ),
+            'nonce'    => wp_create_nonce( 'sitegenie_nonce' ),
         ]);
     }
 
     public function render_metabox( $post ) {
-        require_once CHATPRESS_PLUGIN_DIR . 'templates/metabox.php';
+        require_once SITEGENIE_PLUGIN_DIR . 'templates/metabox.php';
     }
 
     /**
      * AJAX: genera bozza articolo
      */
     public function ajax_generate_content() {
-        check_ajax_referer( 'chatpress_nonce', 'nonce' );
+        check_ajax_referer( 'sitegenie_nonce', 'nonce' );
         if ( ! current_user_can( 'edit_posts' ) ) wp_send_json_error( 'Permessi insufficienti.' );
 
-        $title    = sanitize_text_field( $_POST['title'] ?? '' );
-        $keywords = sanitize_text_field( $_POST['keywords'] ?? '' );
-        $type     = sanitize_text_field( $_POST['type'] ?? 'post' );
+        $title    = sanitize_text_field( wp_unslash( $_POST['title'] ?? '' ) );
+        $keywords = sanitize_text_field( wp_unslash( $_POST['keywords'] ?? '' ) );
+        $type     = sanitize_text_field( wp_unslash( $_POST['type'] ?? 'post' ) );
 
         if ( empty( $title ) ) wp_send_json_error( 'Inserisci un titolo.' );
 
-        $connector = ChatPress_Admin::get_connector();
-        if ( ! $connector ) wp_send_json_error( 'API key non configurata. Vai in ChatPress → Impostazioni.' );
+        $connector = SiteGenie_Admin::get_connector();
+        if ( ! $connector ) wp_send_json_error( 'API key non configurata. Vai in SiteGenie → Impostazioni.' );
 
-        $context = ChatPress_Admin::get_site_context();
+        if ( SiteGenie_Admin::is_rate_limited() ) wp_send_json_error( 'Hai raggiunto il limite di richieste orarie. Riprova più tardi.' );
+
+        $context = SiteGenie_Admin::get_site_context();
         $prompt  = "$context\n\n";
         $prompt .= "Scrivi una bozza completa per un " . ( $type === 'page' ? 'pagina web' : 'articolo di blog' );
         $prompt .= " con il titolo: \"$title\".";
@@ -93,18 +95,20 @@ class ChatPress_Metabox {
      * AJAX: genera meta SEO
      */
     public function ajax_generate_seo() {
-        check_ajax_referer( 'chatpress_nonce', 'nonce' );
+        check_ajax_referer( 'sitegenie_nonce', 'nonce' );
         if ( ! current_user_can( 'edit_posts' ) ) wp_send_json_error( 'Permessi insufficienti.' );
 
-        $title   = sanitize_text_field( $_POST['title'] ?? '' );
-        $content = sanitize_textarea_field( $_POST['content'] ?? '' );
+        $title   = sanitize_text_field( wp_unslash( $_POST['title'] ?? '' ) );
+        $content = sanitize_textarea_field( wp_unslash( $_POST['content'] ?? '' ) );
 
         if ( empty( $title ) && empty( $content ) ) wp_send_json_error( 'Nessun contenuto da analizzare.' );
 
-        $connector = ChatPress_Admin::get_connector();
+        $connector = SiteGenie_Admin::get_connector();
         if ( ! $connector ) wp_send_json_error( 'API key non configurata.' );
 
-        $context = ChatPress_Admin::get_site_context();
+        if ( SiteGenie_Admin::is_rate_limited() ) wp_send_json_error( 'Hai raggiunto il limite di richieste orarie. Riprova più tardi.' );
+
+        $context = SiteGenie_Admin::get_site_context();
         $prompt  = "$context\n\n";
         $prompt .= "Basandoti su questo contenuto:\nTitolo: $title\n";
         if ( $content ) $prompt .= "Testo: " . substr( $content, 0, 500 ) . "...\n";
