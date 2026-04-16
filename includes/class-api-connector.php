@@ -34,6 +34,65 @@ abstract class SiteGenie_API_Connector {
     abstract public function generate_with_tools( array $history, string $message, array $options = [] ): array;
 
     /**
+     * Streaming della risposta testuale — scrive chunk SSE direttamente nell'output.
+     * Da sovrascrivere nei connettori. Fallback: manda tutto in un colpo.
+     */
+    public function stream_response( string $prompt, array $options = [] ): void {
+        $response = $this->generate( $prompt, $options );
+        if ( $response['success'] ) {
+            echo "data: " . wp_json_encode( [ 'chunk' => $response['text'] ] ) . "\n\n";
+        } else {
+            echo "data: " . wp_json_encode( [ 'error' => $response['error'] ] ) . "\n\n";
+        }
+        echo "data: [DONE]\n\n";
+    }
+
+    /**
+     * Esegue una chiamata HTTP con streaming — legge la risposta riga per riga
+     * e chiama $callback per ogni chunk di testo.
+     */
+    protected function http_stream( string $url, array $body, array $headers, callable $callback ): array {
+        $default_headers = [ 'Content-Type' => 'application/json' ];
+        $all_headers = array_merge( $default_headers, $headers );
+
+        // Costruisci header stringa per stream_context
+        $header_str = '';
+        foreach ( $all_headers as $k => $v ) {
+            $header_str .= "$k: $v\r\n";
+        }
+
+        $context = stream_context_create( [
+            'http' => [
+                'method'  => 'POST',
+                'header'  => $header_str,
+                'content' => wp_json_encode( $body ),
+                'timeout' => $this->timeout,
+                'ignore_errors' => true,
+            ],
+            'ssl' => [
+                'verify_peer' => true,
+            ],
+        ] );
+
+        $stream = @fopen( $url, 'r', false, $context );
+        if ( ! $stream ) {
+            return [ 'success' => false, 'error' => 'Impossibile connettersi all\'API.' ];
+        }
+
+        // Leggi riga per riga
+        while ( ! feof( $stream ) ) {
+            $line = fgets( $stream );
+            if ( $line === false ) break;
+            $callback( $line );
+            if ( ob_get_level() ) ob_flush();
+            flush();
+        }
+        fclose( $stream );
+
+        return [ 'success' => true ];
+    }
+
+    /**
      * Esegue una chiamata HTTP POST verso l'API
      */
     protected function http_post( string $url, array $body, array $headers = [] ): array {
