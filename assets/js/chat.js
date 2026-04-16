@@ -34,6 +34,15 @@ jQuery(function ($) {
         get_custom_post_types:  '📦 CPT recuperati',
         create_custom_post:     '✅ CPT creato',
         update_custom_post:     '✏️ CPT aggiornato',
+        get_comments:           '💬 Commenti recuperati',
+        moderate_comment:       '🛡️ Commento moderato',
+        reply_comment:          '💬 Risposta pubblicata',
+        update_site_settings:   '⚙️ Impostazioni aggiornate',
+        get_users:              '👥 Utenti recuperati',
+        create_user:            '👤 Utente creato',
+        get_products:           '🛒 Prodotti recuperati',
+        create_product:         '🛒 Prodotto creato',
+        get_orders:             '📦 Ordini recuperati',
     };
 
     restoreSession();
