@@ -22,6 +22,7 @@ class SiteGenie_Core {
     private function init_hooks() {
         add_action( 'sitegenie_daily_cleanup', [ $this, 'run_cleanup' ] );
         add_action( 'admin_init', [ $this, 'add_privacy_policy' ] );
+        add_action( 'save_post', [ $this, 'reindex_post' ], 20, 2 );
 
         if ( is_admin() ) {
             SiteGenie_Admin::get_instance();
@@ -35,6 +36,14 @@ class SiteGenie_Core {
         if ( $days > 0 ) {
             SiteGenie_History::delete_older_than( $days );
         }
+    }
+
+    public function reindex_post( $post_id, $post ) {
+        if ( ! get_option( 'sitegenie_knowledge_enabled', 1 ) ) return;
+        if ( wp_is_post_revision( $post_id ) || wp_is_post_autosave( $post_id ) ) return;
+        if ( ! in_array( $post->post_type, array_merge( [ 'post', 'page' ], array_keys( get_post_types( [ '_builtin' => false, 'public' => true ] ) ) ), true ) ) return;
+
+        SiteGenie_Knowledge::index_post( $post_id );
     }
 
     public function add_privacy_policy() {
