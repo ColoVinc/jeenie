@@ -5,7 +5,7 @@
  * Description: Assistente AI per WordPress — Chat agentica, generazione contenuti e supporto ACF/CPT con Gemini, OpenAI e Claude.
  * Version:     0.1.0
  * Author:      Vincenzo Colonna
- * Author URI:  
+ * Author URI:  https://github.com/ColoVinc/sitegenie
  * License:     GPL-2.0+
  * License URI: https://www.gnu.org/licenses/gpl-2.0.html
  * Text Domain: sitegenie
@@ -20,7 +20,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 // Costanti del plugin
-define( 'SITEGENIE_VERSION', '0.1.0' );
+define( 'SITEGENIE_VERSION', '0.3.0' );
 define( 'SITEGENIE_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'SITEGENIE_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 define( 'SITEGENIE_PLUGIN_FILE', __FILE__ );
@@ -42,6 +42,7 @@ spl_autoload_register( function( $class ) {
         'SiteGenie_Metabox'       => SITEGENIE_PLUGIN_DIR . 'admin/class-metabox.php',
         'SiteGenie_Chat'          => SITEGENIE_PLUGIN_DIR . 'admin/class-chat.php',
         'SiteGenie_Tools'         => SITEGENIE_PLUGIN_DIR . 'includes/class-tools.php',
+        'SiteGenie_Knowledge'     => SITEGENIE_PLUGIN_DIR . 'includes/class-knowledge.php',
     ];
 
     if ( isset( $map[$class] ) && file_exists( $map[$class] ) ) {
@@ -116,6 +117,18 @@ function sitegenie_create_tables() {
         created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
         PRIMARY KEY (id),
         KEY conversation_id (conversation_id)
+    ) $charset;" );
+
+    // Tabella knowledge base
+    dbDelta( "CREATE TABLE IF NOT EXISTS {$wpdb->prefix}sitegenie_knowledge (
+        id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+        doc_name VARCHAR(255) NOT NULL,
+        chunk_index INT NOT NULL DEFAULT 0,
+        content TEXT NOT NULL,
+        created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        PRIMARY KEY (id),
+        KEY doc_name (doc_name),
+        FULLTEXT KEY content_ft (content)
     ) $charset;" );
 }
 
