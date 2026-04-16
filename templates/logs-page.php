@@ -33,6 +33,88 @@
     </div>
 
     <?php if ( $total_items > 0 ) : ?>
+
+        <!-- GRAFICI DASHBOARD -->
+        <div class="row g-3 mb-4">
+            <div class="col-md-8">
+                <div class="card">
+                    <div class="card-body">
+                        <h3 class="fs-6 mb-3"><i class="fa-solid fa-chart-line"></i> <?php esc_html_e( 'Chiamate e Token (ultimi 30 giorni)', 'sitegenie' ); ?></h3>
+                        <canvas id="sitegenie-chart-daily" height="200"></canvas>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-body">
+                        <h3 class="fs-6 mb-3"><i class="fa-solid fa-chart-pie"></i> <?php esc_html_e( 'Provider', 'sitegenie' ); ?></h3>
+                        <canvas id="sitegenie-chart-provider" height="200"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            if (typeof Chart === 'undefined') return;
+
+            var dailyData = <?php echo wp_json_encode( $daily_stats ); ?>;
+            var providerData = <?php echo wp_json_encode( $provider_stats ); ?>;
+
+            // Grafico giornaliero
+            new Chart(document.getElementById('sitegenie-chart-daily'), {
+                type: 'bar',
+                data: {
+                    labels: dailyData.map(function(d) { return d.day; }),
+                    datasets: [
+                        {
+                            label: '<?php echo esc_js( __( 'Chiamate', 'sitegenie' ) ); ?>',
+                            data: dailyData.map(function(d) { return parseInt(d.calls); }),
+                            backgroundColor: 'rgba(15, 52, 96, 0.7)',
+                            borderRadius: 4,
+                            yAxisID: 'y',
+                        },
+                        {
+                            label: '<?php echo esc_js( __( 'Token', 'sitegenie' ) ); ?>',
+                            data: dailyData.map(function(d) { return parseInt(d.prompt_tokens) + parseInt(d.completion_tokens); }),
+                            type: 'line',
+                            borderColor: '#533483',
+                            backgroundColor: 'rgba(83, 52, 131, 0.1)',
+                            fill: true,
+                            tension: 0.3,
+                            yAxisID: 'y1',
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    interaction: { mode: 'index', intersect: false },
+                    scales: {
+                        y: { position: 'left', beginAtZero: true, title: { display: true, text: '<?php echo esc_js( __( 'Chiamate', 'sitegenie' ) ); ?>' } },
+                        y1: { position: 'right', beginAtZero: true, grid: { drawOnChartArea: false }, title: { display: true, text: '<?php echo esc_js( __( 'Token', 'sitegenie' ) ); ?>' } },
+                    },
+                    plugins: { legend: { position: 'bottom' } }
+                }
+            });
+
+            // Grafico provider
+            var providerColors = { gemini: '#4285F4', openai: '#10a37f', claude: '#d97706' };
+            new Chart(document.getElementById('sitegenie-chart-provider'), {
+                type: 'doughnut',
+                data: {
+                    labels: providerData.map(function(d) { return d.provider.charAt(0).toUpperCase() + d.provider.slice(1); }),
+                    datasets: [{
+                        data: providerData.map(function(d) { return parseInt(d.calls); }),
+                        backgroundColor: providerData.map(function(d) { return providerColors[d.provider] || '#999'; }),
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: { legend: { position: 'bottom' } }
+                }
+            });
+        });
+        </script>
         <div class="d-flex justify-content-between align-items-center mb-3">
             <button type="button" id="sitegenie-clear-logs" class="btn btn-outline-danger btn-sm">
                 <i class="fa-solid fa-trash"></i> <?php esc_html_e( 'Svuota Log', 'sitegenie' ); ?>
