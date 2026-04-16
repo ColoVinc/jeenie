@@ -151,7 +151,7 @@ class SiteGenie_Gemini extends SiteGenie_API_Connector {
             $tool_result = SiteGenie_Tools::execute( $tool_name, $tool_args );
 
             // Tieni traccia dell'ultima azione "mutativa"
-            if ( in_array( $tool_name, [ 'create_post', 'update_post', 'delete_post', 'create_custom_post', 'update_custom_post' ] ) ) {
+            if ( in_array( $tool_name, [ 'create_post', 'update_post', 'delete_post', 'create_custom_post', 'update_custom_post', 'moderate_comment', 'reply_comment', 'update_site_settings', 'create_user', 'create_product' ] ) ) {
                 $last_action = [ 'tool' => $tool_name, 'result' => $tool_result ];
             }
 
@@ -228,9 +228,12 @@ class SiteGenie_Gemini extends SiteGenie_API_Connector {
 
     public static function get_models(): array {
         return [
-            'gemini-2.5-flash-lite' => 'Gemini 2.5 Flash-Lite (consigliato — 1.000 req/giorno gratis)',
-            'gemini-2.5-flash'      => 'Gemini 2.5 Flash (250 req/giorno gratis)',
-            'gemini-2.5-pro'        => 'Gemini 2.5 Pro (100 req/giorno gratis, più lento)',
+            'gemini-2.5-flash-lite' => 'Gemini 2.5 Flash-Lite (più economico e veloce)',
+            'gemini-2.5-flash'      => 'Gemini 2.5 Flash (miglior rapporto qualità/prezzo)',
+            'gemini-2.5-pro'        => 'Gemini 2.5 Pro (reasoning avanzato)',
+            'gemini-3-flash-preview'      => 'Gemini 3 Flash (anteprima — prestazioni frontier)',
+            'gemini-3.1-flash-lite-preview' => 'Gemini 3.1 Flash-Lite (anteprima — ultra-veloce)',
+            'gemini-3.1-pro-preview'      => 'Gemini 3.1 Pro (anteprima — il più intelligente)',
         ];
     }
 }
