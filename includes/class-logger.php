@@ -87,4 +87,38 @@ class SiteGenie_Logger {
         // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- custom table, truncate operation
         $wpdb->query( "TRUNCATE TABLE {$wpdb->prefix}sitegenie_logs" );
     }
+
+    /**
+     * Dati aggregati per giorno (ultimi 30 giorni) — per i grafici dashboard
+     */
+    public static function get_daily_stats( int $days = 30 ): array {
+        global $wpdb;
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- custom table
+        return $wpdb->get_results( $wpdb->prepare(
+            "SELECT DATE(created_at) as day,
+                    COUNT(*) as calls,
+                    SUM(prompt_tokens) as prompt_tokens,
+                    SUM(completion_tokens) as completion_tokens
+             FROM {$wpdb->prefix}sitegenie_logs
+             WHERE created_at >= DATE_SUB(NOW(), INTERVAL %d DAY)
+             GROUP BY DATE(created_at)
+             ORDER BY day ASC",
+            $days
+        ), ARRAY_A );
+    }
+
+    /**
+     * Distribuzione chiamate per provider
+     */
+    public static function get_provider_stats(): array {
+        global $wpdb;
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- custom table
+        return $wpdb->get_results(
+            "SELECT provider, COUNT(*) as calls, SUM(prompt_tokens + completion_tokens) as tokens
+             FROM {$wpdb->prefix}sitegenie_logs
+             GROUP BY provider
+             ORDER BY calls DESC",
+            ARRAY_A
+        );
+    }
 }
