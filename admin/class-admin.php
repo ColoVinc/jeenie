@@ -23,6 +23,11 @@ class SiteGenie_Admin {
         add_action( 'admin_notices', [ $this, 'missing_key_notice' ] );
         add_action( 'wp_ajax_sitegenie_test_api', [ $this, 'ajax_test_api' ] );
         add_action( 'wp_ajax_sitegenie_clear_logs', [ $this, 'ajax_clear_logs' ] );
+        add_action( 'wp_ajax_sitegenie_upload_knowledge', [ $this, 'ajax_upload_knowledge' ] );
+        add_action( 'wp_ajax_sitegenie_delete_knowledge', [ $this, 'ajax_delete_knowledge' ] );
+        add_action( 'wp_ajax_sitegenie_index_posts', [ $this, 'ajax_index_posts' ] );
+        add_action( 'wp_ajax_sitegenie_generate_alt', [ $this, 'ajax_generate_alt' ] );
+        add_filter( 'attachment_fields_to_edit', [ $this, 'add_alt_button_to_media' ], 10, 2 );
     }
 
     /**
@@ -82,6 +87,15 @@ class SiteGenie_Admin {
             'sitegenie-logs',
             [ $this, 'render_logs_page' ]
         );
+
+        add_submenu_page(
+            'sitegenie',
+            'Knowledge Base',
+            'Knowledge Base',
+            'manage_options',
+            'sitegenie-knowledge',
+            [ $this, 'render_knowledge_page' ]
+        );
     }
 
     /**
@@ -127,6 +141,16 @@ class SiteGenie_Admin {
             'default'           => 30,
         ]);
 
+        // Gruppo knowledge base (settings group separato)
+        register_setting( 'sitegenie_knowledge_settings', 'sitegenie_knowledge_enabled', [
+            'sanitize_callback' => 'absint',
+            'default'           => 1,
+        ]);
+        register_setting( 'sitegenie_knowledge_settings', 'sitegenie_knowledge_max_chars', [
+            'sanitize_callback' => 'absint',
+            'default'           => 1500,
+        ]);
+
         // Gruppo contesto sito
         register_setting( 'sitegenie_settings', 'sitegenie_site_name', [
             'sanitize_callback' => 'sanitize_text_field',
@@ -149,6 +173,13 @@ class SiteGenie_Admin {
      * Carica CSS e JS solo nelle pagine del plugin
      */
     public function enqueue_assets( $hook ) {
+        // Script per il bottone alt text nella modale media (tutte le pagine admin)
+        wp_enqueue_script( 'sitegenie-media-alt', SITEGENIE_PLUGIN_URL . 'assets/js/media-alt.js', [ 'jquery' ], SITEGENIE_VERSION, true );
+        wp_localize_script( 'sitegenie-media-alt', 'sitegenie_alt', [
+            'ajax_url' => admin_url( 'admin-ajax.php' ),
+            'nonce'    => wp_create_nonce( 'sitegenie_nonce' ),
+        ]);
+
         if ( strpos( $hook, 'sitegenie' ) === false ) return;
 
         // Bootstrap JS (CSS già caricato globalmente dal chat widget)
@@ -299,5 +330,109 @@ class SiteGenie_Admin {
 
         set_transient( $key, $count + 1, HOUR_IN_SECONDS );
         return false;
+    }
+
+    /**
+     * Renderizza la pagina Knowledge Base
+     */
+    public function render_knowledge_page() {
+        $documents = SiteGenie_Knowledge::get_documents();
+        require_once SITEGENIE_PLUGIN_DIR . 'templates/knowledge-page.php';
+    }
+
+    /**
+     * AJAX: carica un documento nella knowledge base
+     */
+    public function ajax_upload_knowledge() {
+        check_ajax_referer( 'sitegenie_nonce', 'nonce' );
+        if ( ! current_user_can( 'manage_options' ) ) wp_send_json_error( 'Permessi insufficienti.' );
+
+        $name    = sanitize_text_field( wp_unslash( $_POST['doc_name'] ?? '' ) );
+        $content = sanitize_textarea_field( wp_unslash( $_POST['doc_content'] ?? '' ) );
+
+        if ( empty( $name ) || empty( $content ) ) {
+            wp_send_json_error( 'Nome e contenuto sono obbligatori.' );
+        }
+
+        $chunks = SiteGenie_Knowledge::add_document( $name, $content );
+        wp_send_json_success( [ 'chunks' => $chunks, 'message' => "Documento \"$name\" salvato ($chunks frammenti)." ] );
+    }
+
+    /**
+     * AJAX: elimina un documento dalla knowledge base
+     */
+    public function ajax_delete_knowledge() {
+        check_ajax_referer( 'sitegenie_nonce', 'nonce' );
+        if ( ! current_user_can( 'manage_options' ) ) wp_send_json_error( 'Permessi insufficienti.' );
+
+        $name = sanitize_text_field( wp_unslash( $_POST['doc_name'] ?? '' ) );
+        if ( empty( $name ) ) wp_send_json_error( 'Nome documento mancante.' );
+
+        SiteGenie_Knowledge::delete_document( $name );
+        wp_send_json_success( 'Documento eliminato.' );
+    }
+
+    /**
+     * AJAX: indicizza tutti i post pubblicati
+     */
+    public function ajax_index_posts() {
+        check_ajax_referer( 'sitegenie_nonce', 'nonce' );
+        if ( ! current_user_can( 'manage_options' ) ) wp_send_json_error( 'Permessi insufficienti.' );
+
+        $count = SiteGenie_Knowledge::index_all_posts();
+        wp_send_json_success( [ 'count' => $count, 'message' => "$count post indicizzati nella knowledge base." ] );
+    }
+
+    /**
+     * Aggiunge il bottone "Genera Alt Text" nella modale media
+     */
+    public function add_alt_button_to_media( $form_fields, $post ) {
+        if ( ! wp_attachment_is_image( $post->ID ) ) return $form_fields;
+
+        $form_fields['sitegenie_alt'] = [
+            'label' => '',
+            'input' => 'html',
+            'html'  => '<button type="button" class="button sitegenie-generate-alt" data-id="' . esc_attr( $post->ID ) . '">🤖 ' . esc_html__( 'Genera Alt Text con AI', 'sitegenie' ) . '</button>',
+        ];
+
+        return $form_fields;
+    }
+
+    /**
+     * AJAX: genera alt text per un'immagine
+     */
+    public function ajax_generate_alt() {
+        check_ajax_referer( 'sitegenie_nonce', 'nonce' );
+        if ( ! current_user_can( 'edit_posts' ) ) wp_send_json_error( 'Permessi insufficienti.' );
+
+        $attachment_id = intval( $_POST['attachment_id'] ?? 0 );
+        if ( ! $attachment_id || ! wp_attachment_is_image( $attachment_id ) ) {
+            wp_send_json_error( 'Immagine non valida.' );
+        }
+
+        $connector = self::get_connector();
+        if ( ! $connector ) wp_send_json_error( 'API key non configurata.' );
+
+        $image_url = wp_get_attachment_url( $attachment_id );
+        if ( ! $image_url ) wp_send_json_error( 'URL immagine non trovato.' );
+
+        // Usa il thumbnail per risparmiare token
+        $thumb = wp_get_attachment_image_src( $attachment_id, 'medium' );
+        $url   = $thumb ? $thumb[0] : $image_url;
+
+        $context  = self::get_site_context();
+        $prompt   = "$context\n\nGenera un alt text breve e descrittivo (massimo 125 caratteri) per questa immagine. ";
+        $prompt  .= "Rispondi SOLO con il testo dell'alt, senza virgolette né spiegazioni.\n\nURL immagine: $url";
+
+        $response = $connector->generate( $prompt, [ 'max_tokens' => 100, 'temperature' => 0.3 ] );
+
+        if ( ! $response['success'] ) {
+            wp_send_json_error( $response['error'] );
+        }
+
+        $alt_text = sanitize_text_field( trim( $response['text'], ' "\'') );
+        update_post_meta( $attachment_id, '_wp_attachment_image_alt', $alt_text );
+
+        wp_send_json_success( [ 'alt_text' => $alt_text ] );
     }
 }
