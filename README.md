@@ -5,22 +5,27 @@ SiteGenie integrates artificial intelligence directly into the WordPress admin p
 ![WordPress](https://img.shields.io/badge/WordPress-5.8%2B-blue?logo=wordpress)
 ![PHP](https://img.shields.io/badge/PHP-7.4%2B-777BB4?logo=php)
 ![License](https://img.shields.io/badge/License-GPL--2.0-green)
-![Version](https://img.shields.io/badge/Version-0.1.0-orange)
 
 ---
 
 ## ✨ Features
 
-- **AI Chat in the back-office** — Floating widget available on every admin page with conversation history
+- **AI Chat with streaming** — Floating widget on every admin page with real-time token-by-token responses, markdown rendering, and conversation history
+- **Agentic function calling** — The AI can create, edit and delete posts, pages, Custom Post Types, comments, users, products, menu items and site settings autonomously
 - **Content generation** — Metabox in the post editor to generate article drafts and SEO meta (title, description, excerpt)
-- **Agentic function calling** — The AI can create, edit and delete posts, pages and Custom Post Types autonomously
+- **Content analysis** — Ask the AI to analyze your existing posts and suggest improvements for SEO, readability and brand consistency
+- **Knowledge base** — Upload documents (TXT) as custom context for the AI, with FULLTEXT search and automatic chunking
+- **RAG (Retrieval-Augmented Generation)** — Index your site's posts, pages and CPTs so the AI knows your existing content
+- **Current page context** — When chatting from the post editor, the AI automatically knows which post you're working on
 - **ACF support** — Automatically discovers and fills Advanced Custom Fields with type-based validation
-- **Multi-provider** — Supports Google Gemini, OpenAI (GPT) and Anthropic Claude
+- **Alt text generation** — Generate AI-powered alt text for images directly in the media library
+- **Multi-provider** — Supports Google Gemini, OpenAI (GPT) and Anthropic Claude with up-to-date model selection
+- **Analytics dashboard** — Charts showing API calls over time, token consumption and provider distribution
+- **WooCommerce support** — Create products, view orders (tools appear only when WooCommerce is active)
 - **Site context** — Configure name, sector, tone and target audience for content consistent with your brand
-- **API call logs** — Monitor tokens consumed, errors and full API call history with pagination
+- **Toast notifications** — Visual feedback when the AI performs actions, with direct links to the editor
 - **Rate limiting** — Configurable per-user hourly request limit
 - **Auto-cleanup** — Daily cron job to automatically delete old conversations
-- **Privacy** — Auto-registers a privacy policy suggestion in WordPress
 
 ## 🧠 Available AI Tools
 
@@ -31,21 +36,32 @@ The AI assistant can execute these actions on your WordPress site:
 | `create_post` | Create a new post or page |
 | `update_post` | Edit an existing post or page |
 | `delete_post` | Move a post to trash |
-| `get_posts` | Retrieve and search posts/pages |
+| `get_posts` | Retrieve and search posts with content preview |
 | `get_media` | Browse the media library |
 | `get_categories` | List all categories |
 | `get_site_info` | Get site name, URL, theme, plugins, stats |
 | `get_custom_post_types` | Discover all CPTs with their ACF fields |
 | `create_custom_post` | Create a CPT entry and populate ACF fields |
 | `update_custom_post` | Update a CPT entry and its ACF fields |
+| `get_comments` | Retrieve comments with status filter |
+| `moderate_comment` | Approve, spam or trash a comment |
+| `reply_comment` | Reply to a comment as the current user |
+| `update_site_settings` | Update site title, tagline, posts per page |
+| `get_users` | List users with role filter |
+| `create_user` | Create a new user (admin role blocked for security) |
+| `get_menus` | List navigation menus with items |
+| `add_menu_item` | Add a page or custom link to a menu |
+| `get_products` | List WooCommerce products *(only if WooCommerce is active)* |
+| `create_product` | Create a simple WooCommerce product *(only if WooCommerce is active)* |
+| `get_orders` | List WooCommerce orders *(only if WooCommerce is active)* |
 
 ## 🔌 Supported Providers
 
 | Provider | Models | Free Tier |
 |----------|--------|-----------|
-| **Google Gemini** | Gemini 2.5 Flash-Lite, Flash, Pro | Up to 1,000 req/day (Flash-Lite) |
-| **OpenAI** | GPT-4o Mini, GPT-4o, GPT-4.1 | No free tier |
-| **Anthropic Claude** | Claude Sonnet 4, Claude Haiku 4 | No free tier |
+| **Google Gemini** | 2.5 Flash-Lite, 2.5 Flash, 2.5 Pro, 3 Flash, 3.1 Flash-Lite, 3.1 Pro | Up to 1,000 req/day |
+| **OpenAI** | GPT-5.4 Nano/Mini/Full, GPT-4.1 Nano/Mini/Full | No free tier |
+| **Anthropic Claude** | Haiku 4.5, Sonnet 4.6, Opus 4.6 | No free tier |
 
 Get your API keys:
 - **Gemini** → [Google AI Studio](https://aistudio.google.com)
@@ -60,22 +76,29 @@ Clone or download this repository into your WordPress plugins directory:
 
 ```bash
 cd wp-content/plugins/
-git clone https://github.com/vincenzocolonna/sitegenie.git
+git clone https://github.com/ColoVinc/sitegenie.git
 ```
 
 ### 2. Install vendor dependencies
 
 This repository does not include third-party CSS/JS libraries. You need to download them and place them in `assets/vendor/`:
 
-**Bootstrap 5.3.3:**
+**Bootstrap 5.3.3** (used only in plugin admin pages, not globally):
 - Download from [getbootstrap.com](https://getbootstrap.com/docs/5.3/getting-started/download/)
-- Place `bootstrap.min.css` in `assets/vendor/`
-- Place `bootstrap.bundle.min.js` in `assets/vendor/`
+- Place `bootstrap.min.css` and `bootstrap.bundle.min.js` in `assets/vendor/`
 
 **Font Awesome 6.5.1 (Free):**
 - Download from [fontawesome.com](https://fontawesome.com/download)
 - Place `fontawesome.min.css` (the `all.min.css` renamed) in `assets/vendor/`
-- Place the `webfonts/` folder in `assets/vendor/webfonts/` (you need at least `fa-solid-900.woff2`, `fa-solid-900.ttf`, `fa-regular-400.woff2`, `fa-regular-400.ttf`, `fa-brands-400.woff2`, `fa-brands-400.ttf`)
+- Place the `webfonts/` folder in `assets/vendor/webfonts/`
+
+**Marked.js 16.x** (markdown rendering in chat):
+- Download from [cdnjs](https://cdnjs.cloudflare.com/ajax/libs/marked/16.3.0/lib/marked.umd.min.js)
+- Save as `assets/vendor/marked.min.js`
+
+**Chart.js 4.x** (analytics dashboard):
+- Download from [jsdelivr](https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js)
+- Save as `assets/vendor/chart.min.js`
 
 Your `assets/vendor/` folder should look like this:
 
@@ -84,6 +107,8 @@ assets/vendor/
 ├── bootstrap.min.css
 ├── bootstrap.bundle.min.js
 ├── fontawesome.min.css
+├── marked.min.js
+├── chart.min.js
 └── webfonts/
     ├── fa-solid-900.woff2
     ├── fa-solid-900.ttf
@@ -107,43 +132,47 @@ assets/vendor/
 sitegenie/
 ├── sitegenie.php                  # Main plugin file, bootstrap, DB tables
 ├── includes/
-│   ├── class-core.php             # Core singleton, hooks initialization
+│   ├── class-core.php             # Core singleton, hooks, auto-reindex on save
 │   ├── class-api-connector.php    # Abstract base class for AI providers
-│   ├── class-tools.php            # Tool declarations and execution engine
+│   ├── class-tools.php            # 21 tool declarations and execution engine
 │   ├── class-history.php          # Conversation and message CRUD
-│   ├── class-logger.php           # API call logging and statistics
+│   ├── class-logger.php           # API call logging, stats, daily/provider aggregation
+│   ├── class-knowledge.php        # Knowledge base: documents, chunking, FULLTEXT search, RAG
 │   └── connectors/
-│       ├── class-gemini.php       # Google Gemini connector
-│       ├── class-openai.php       # OpenAI GPT connector
-│       └── class-claude.php       # Anthropic Claude connector
+│       ├── class-gemini.php       # Google Gemini (with thought signatures support)
+│       ├── class-openai.php       # OpenAI GPT
+│       └── class-claude.php       # Anthropic Claude
 ├── admin/
-│   ├── class-admin.php            # Settings page, menu, connector factory
-│   ├── class-chat.php             # Chat widget and AJAX endpoints
+│   ├── class-admin.php            # Settings, menu, connector factory, rate limit, alt text
+│   ├── class-chat.php             # Chat widget with SSE streaming + AJAX endpoints
 │   └── class-metabox.php          # Editor metabox for content/SEO generation
 ├── templates/
-│   ├── settings-page.php          # Settings page template
-│   ├── chat-widget.php            # Chat widget HTML
+│   ├── settings-page.php          # Settings page
+│   ├── chat-widget.php            # Chat widget HTML (no Bootstrap dependency)
 │   ├── metabox.php                # Metabox HTML
-│   └── logs-page.php              # Logs page with pagination
+│   ├── logs-page.php              # Logs page with Chart.js dashboard
+│   └── knowledge-page.php         # Knowledge base management + RAG indexing
 └── assets/
     ├── css/
     │   ├── admin.css              # Admin pages styles
-    │   └── chat.css               # Chat widget and metabox styles
+    │   └── chat.css               # Chat widget styles (self-contained, no Bootstrap)
     └── js/
-        ├── admin.js               # Settings page logic
-        ├── chat.js                # Chat widget logic
-        └── metabox.js             # Metabox logic (Gutenberg + Classic Editor)
+        ├── admin.js               # Settings, knowledge base, RAG indexing logic
+        ├── chat.js                # Chat widget with SSE streaming + markdown
+        ├── metabox.js             # Metabox (Gutenberg + Classic Editor)
+        └── media-alt.js           # Alt text generation in media library
 ```
 
 ## 🗄️ Database
 
-The plugin creates 3 custom tables on activation:
+The plugin creates 4 custom tables on activation:
 
 | Table | Purpose |
 |-------|---------|
 | `wp_sitegenie_conversations` | Chat conversations per user |
 | `wp_sitegenie_messages` | Individual messages (role: user/model) |
 | `wp_sitegenie_logs` | API call logs with token counts |
+| `wp_sitegenie_knowledge` | Knowledge base chunks with FULLTEXT index |
 
 All tables are automatically removed when the plugin is deleted (not deactivated).
 
@@ -154,7 +183,9 @@ All tables are automatically removed when the plugin is deleted (not deactivated
 - Input sanitization on all user data
 - Conversation ownership verification (users can only access their own conversations)
 - Configurable per-user hourly rate limiting
+- Administrator user creation blocked via chat for safety
 - API keys stored in `wp_options`, never hardcoded
+- Thought signatures support for Gemini 3 models
 
 ## 📋 Requirements
 
@@ -168,4 +199,4 @@ This project is licensed under the [GPL-2.0+](https://www.gnu.org/licenses/gpl-2
 
 ## 👤 Author
 
-**Vincenzo Colonna** — [GitHub](https://github.com/vincenzocolonna)
+**Vincenzo Colonna** — [GitHub](https://github.com/ColoVinc)
