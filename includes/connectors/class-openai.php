@@ -101,7 +101,7 @@ class SiteGenie_OpenAI extends SiteGenie_API_Connector {
                 $tool_args = json_decode( $tc['function']['arguments'], true ) ?? [];
                 $tool_result = SiteGenie_Tools::execute( $tool_name, $tool_args );
 
-                if ( in_array( $tool_name, [ 'create_post', 'update_post', 'delete_post', 'create_custom_post', 'update_custom_post', 'moderate_comment', 'reply_comment', 'update_site_settings', 'create_user', 'create_product' ] ) ) {
+                if ( in_array( $tool_name, [ 'create_post', 'update_post', 'delete_post', 'create_custom_post', 'update_custom_post', 'moderate_comment', 'reply_comment', 'update_site_settings', 'create_user', 'create_product', 'add_menu_item' ] ) ) {
                     $last_action = [ 'tool' => $tool_name, 'result' => $tool_result ];
                 }
 
