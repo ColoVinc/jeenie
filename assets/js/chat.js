@@ -43,6 +43,8 @@ jQuery(function ($) {
         get_products:           '🛒 Prodotti recuperati',
         create_product:         '🛒 Prodotto creato',
         get_orders:             '📦 Ordini recuperati',
+        get_menus:              '📋 Menu recuperati',
+        add_menu_item:          '➕ Voce menu aggiunta',
     };
 
     restoreSession();
