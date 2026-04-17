@@ -129,16 +129,22 @@ class SiteGenie_Gemini extends SiteGenie_API_Connector {
 
             // Cerca function call
             $function_call = null;
+            $function_call_part = null;
             foreach ( $parts as $part ) {
                 if ( isset( $part['functionCall'] ) ) {
                     $function_call = $part['functionCall'];
+                    $function_call_part = $part; // Preserva l'intero part inclusa thoughtSignature
                     break;
                 }
             }
 
             // Nessun tool call: risposta testuale finale
             if ( ! $function_call ) {
-                $text = $parts[0]['text'] ?? 'Operazione completata.';
+                $text = '';
+                foreach ( $parts as $part ) {
+                    if ( isset( $part['text'] ) ) { $text .= $part['text']; }
+                }
+                if ( empty( $text ) ) $text = 'Operazione completata.';
                 SiteGenie_Logger::log( 'gemini', $total_pt, $total_ct, 'success' );
                 $result = $this->format_response( $text, $total_pt, $total_ct );
                 if ( $last_action ) $result['action_taken'] = $last_action;
@@ -151,15 +157,17 @@ class SiteGenie_Gemini extends SiteGenie_API_Connector {
             $tool_result = SiteGenie_Tools::execute( $tool_name, $tool_args );
 
             // Tieni traccia dell'ultima azione "mutativa"
-            if ( in_array( $tool_name, [ 'create_post', 'update_post', 'delete_post', 'create_custom_post', 'update_custom_post', 'moderate_comment', 'reply_comment', 'update_site_settings', 'create_user', 'create_product' ] ) ) {
+            if ( in_array( $tool_name, [ 'create_post', 'update_post', 'delete_post', 'create_custom_post', 'update_custom_post', 'moderate_comment', 'reply_comment', 'update_site_settings', 'create_user', 'create_product', 'add_menu_item' ] ) ) {
                 $last_action = [ 'tool' => $tool_name, 'result' => $tool_result ];
             }
 
-            // Aggiungi alla conversazione e continua il loop
-            $fc_part = [ 'functionCall' => [ 'name' => $tool_name, 'args' => (object) $tool_args ] ];
+            // Aggiungi alla conversazione e continua il loop — preserva thoughtSignature per Gemini 3
+            if ( isset( $function_call_part['functionCall']['args'] ) && is_array( $function_call_part['functionCall']['args'] ) ) {
+                $function_call_part['functionCall']['args'] = (object) $function_call_part['functionCall']['args'];
+            }
             $contents[] = [
                 'role'  => 'model',
-                'parts' => [ $fc_part ],
+                'parts' => [ $function_call_part ],
             ];
             $contents[] = [
                 'role'  => 'user',
