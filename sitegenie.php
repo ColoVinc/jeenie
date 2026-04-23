@@ -36,6 +36,7 @@ spl_autoload_register( function( $class ) {
         'SiteGenie_Gemini'        => SITEGENIE_PLUGIN_DIR . 'includes/connectors/class-gemini.php',
         'SiteGenie_OpenAI'        => SITEGENIE_PLUGIN_DIR . 'includes/connectors/class-openai.php',
         'SiteGenie_Claude'        => SITEGENIE_PLUGIN_DIR . 'includes/connectors/class-claude.php',
+        'SiteGenie_Groq'          => SITEGENIE_PLUGIN_DIR . 'includes/connectors/class-groq.php',
         'SiteGenie_Logger'        => SITEGENIE_PLUGIN_DIR . 'includes/class-logger.php',
         'SiteGenie_History'       => SITEGENIE_PLUGIN_DIR . 'includes/class-history.php',
         'SiteGenie_Admin'         => SITEGENIE_PLUGIN_DIR . 'admin/class-admin.php',
