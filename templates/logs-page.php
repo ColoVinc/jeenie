@@ -159,7 +159,7 @@
                                     <?php if ( $sitegenie_log['status'] === 'success' ) : ?>
                                         <span class="badge bg-success"><i class="fa-solid fa-check"></i> OK</span>
                                     <?php else : ?>
-                                        <span class="badge bg-danger" title="<?php echo esc_attr( $sitegenie_log['error_message'] ); ?>"><i class="fa-solid fa-xmark"></i> <?php esc_html_e( 'Errore', 'sitegenie' ); ?></span>
+                                        <span class="badge bg-danger sitegenie-log-error" style="cursor:pointer;" data-error="<?php echo esc_attr( $sitegenie_log['error_message'] ); ?>"><i class="fa-solid fa-xmark"></i> <?php esc_html_e( 'Errore', 'sitegenie' ); ?></span>
                                     <?php endif; ?>
                                 </td>
                             </tr>
