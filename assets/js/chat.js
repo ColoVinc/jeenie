@@ -133,9 +133,9 @@ jQuery(function ($) {
                 var active = (c.id == currentConversationId) ? ' sitegenie-conv-active' : '';
                 html += '<div class="sitegenie-conv-item' + active + '" data-id="' + c.id + '">'
                     + '<div class="sitegenie-conv-title">' + escHtml(c.title) + '</div>'
-                    + '<div class="d-flex justify-content-between align-items-center">'
-                    + '<small class="text-muted">' + c.message_count + ' msg</small>'
-                    + '<button class="sitegenie-conv-delete btn btn-sm p-0 border-0 text-muted" title="Elimina"><i class="fa-solid fa-trash-can fa-xs"></i></button>'
+                    + '<div class="sitegenie-conv-meta">'
+                    + '<small>' + c.message_count + ' msg</small>'
+                    + '<button class="sitegenie-conv-delete" title="Elimina"><i class="fa-solid fa-trash-can fa-xs"></i></button>'
                     + '</div></div>';
             });
             $histList.html(html);
