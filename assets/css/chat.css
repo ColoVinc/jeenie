@@ -260,6 +260,24 @@
 }
 .sitegenie-conv-item:hover { background: #f5f7ff; }
 .sitegenie-conv-active { background: #e8eaf6; }
+.sitegenie-conv-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.sitegenie-conv-meta small {
+    color: #6c757d;
+    font-size: 12px;
+}
+.sitegenie-conv-delete {
+    background: none;
+    border: 0;
+    color: #999;
+    cursor: pointer;
+    padding: 2px 4px;
+    font-size: 12px;
+}
+.sitegenie-conv-delete:hover { color: #d63638; }
 .sitegenie-conv-title {
     font-size: 13px;
     font-weight: 500;
