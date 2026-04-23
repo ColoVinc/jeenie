@@ -128,6 +128,13 @@ class SiteGenie_Admin {
             'sanitize_callback' => 'sanitize_text_field',
             'default'           => 'claude-sonnet-4-6',
         ]);
+        register_setting( 'sitegenie_settings', 'sitegenie_groq_api_key', [
+            'sanitize_callback' => 'sanitize_text_field',
+        ]);
+        register_setting( 'sitegenie_settings', 'sitegenie_groq_model', [
+            'sanitize_callback' => 'sanitize_text_field',
+            'default'           => 'llama-3.3-70b-versatile',
+        ]);
         register_setting( 'sitegenie_settings', 'sitegenie_rate_limit', [
             'sanitize_callback' => 'absint',
             'default'           => 30,
@@ -312,6 +319,14 @@ class SiteGenie_Admin {
             if ( empty( $api_key ) ) return null;
             $connector = new SiteGenie_Claude( $api_key );
             $connector->set_model( get_option( 'sitegenie_claude_model', 'claude-sonnet-4-6' ) );
+            return $connector;
+        }
+
+        if ( $provider === 'groq' ) {
+            $api_key = get_option( 'sitegenie_groq_api_key', '' );
+            if ( empty( $api_key ) ) return null;
+            $connector = new SiteGenie_Groq( $api_key );
+            $connector->set_model( get_option( 'sitegenie_groq_model', 'llama-3.3-70b-versatile' ) );
             return $connector;
         }
 
