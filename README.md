@@ -19,8 +19,8 @@ SiteGenie integrates artificial intelligence directly into the WordPress admin p
 - **Current page context** — When chatting from the post editor, the AI automatically knows which post you're working on
 - **ACF support** — Automatically discovers and fills Advanced Custom Fields with type-based validation
 - **Alt text generation** — Generate AI-powered alt text for images directly in the media library
-- **Multi-provider** — Supports Google Gemini, OpenAI (GPT) and Anthropic Claude with up-to-date model selection
-- **Analytics dashboard** — Charts showing API calls over time, token consumption and provider distribution
+- **Multi-provider** — Supports Google Gemini, OpenAI (GPT), Anthropic Claude and Groq (free) with up-to-date model selection
+- **Analytics dashboard** — Charts showing API calls over time, token consumption and provider distribution, with clickable error details
 - **WooCommerce support** — Create products, view orders (tools appear only when WooCommerce is active)
 - **Site context** — Configure name, sector, tone and target audience for content consistent with your brand
 - **Toast notifications** — Visual feedback when the AI performs actions, with direct links to the editor
@@ -62,11 +62,13 @@ The AI assistant can execute these actions on your WordPress site:
 | **Google Gemini** | 2.5 Flash-Lite, 2.5 Flash, 2.5 Pro, 3 Flash, 3.1 Flash-Lite, 3.1 Pro | Up to 1,000 req/day |
 | **OpenAI** | GPT-5.4 Nano/Mini/Full, GPT-4.1 Nano/Mini/Full | No free tier |
 | **Anthropic Claude** | Haiku 4.5, Sonnet 4.6, Opus 4.6 | No free tier |
+| **Groq** | Llama 3.3 70B, Llama 3.1 8B, GPT-OSS 120B/20B, Llama 4 Scout, Qwen3 32B | Free (rate limited) |
 
 Get your API keys:
 - **Gemini** → [Google AI Studio](https://aistudio.google.com)
 - **OpenAI** → [OpenAI Platform](https://platform.openai.com/api-keys)
 - **Claude** → [Anthropic Console](https://console.anthropic.com/settings/keys)
+- **Groq** → [Groq Console](https://console.groq.com/keys) (free, no credit card required)
 
 ## 📦 Installation
 
@@ -140,8 +142,9 @@ sitegenie/
 │   ├── class-knowledge.php        # Knowledge base: documents, chunking, FULLTEXT search, RAG
 │   └── connectors/
 │       ├── class-gemini.php       # Google Gemini (with thought signatures support)
-│       ├── class-openai.php       # OpenAI GPT
-│       └── class-claude.php       # Anthropic Claude
+│       ├── class-openai.php       # OpenAI GPT (base for OpenAI-compatible providers)
+│       ├── class-claude.php       # Anthropic Claude
+│       └── class-groq.php         # Groq (extends OpenAI connector)
 ├── admin/
 │   ├── class-admin.php            # Settings, menu, connector factory, rate limit, alt text
 │   ├── class-chat.php             # Chat widget with SSE streaming + AJAX endpoints
