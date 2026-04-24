@@ -62,6 +62,52 @@ jQuery(function ($) {
     });
 
 
+    // ── Componenti ────────────────────────────────────────────
+
+    // Toggle stato componente
+    $(document).on('click', '.sitegenie-comp-toggle', function () {
+        var $btn = $(this);
+        $.post(sitegenie.ajax_url, {
+            action: 'sitegenie_toggle_component',
+            nonce: sitegenie.nonce,
+            slug: $btn.data('slug'),
+            status: $btn.data('status'),
+        }).done(function (res) {
+            if (res.success) location.reload();
+            else alert(res.data);
+        });
+    });
+
+    // Elimina componente
+    $(document).on('click', '.sitegenie-comp-delete', function () {
+        if (!confirm('Eliminare questo componente? I file verranno rimossi.')) return;
+        $.post(sitegenie.ajax_url, {
+            action: 'sitegenie_delete_component',
+            nonce: sitegenie.nonce,
+            slug: $(this).data('slug'),
+        }).done(function (res) {
+            if (res.success) location.reload();
+            else alert(res.data);
+        });
+    });
+
+    // Disattiva tutti
+    $('#sitegenie-deactivate-all').on('click', function () {
+        if (!confirm('Disattivare tutti i componenti?')) return;
+        $.post(sitegenie.ajax_url, {
+            action: 'sitegenie_toggle_component',
+            nonce: sitegenie.nonce,
+            slug: '__all__',
+            status: 'inactive',
+        }).done(function () { location.reload(); });
+    });
+
+    // Mostra errore componente
+    $(document).on('click', '.sitegenie-comp-error', function () {
+        var msg = $(this).data('error') || 'Errore sconosciuto';
+        alert('Errore componente:\n\n' + msg);
+    });
+
     // Mostra dettaglio errore nei log
     $(document).on('click', '.sitegenie-log-error', function () {
         var msg = $(this).data('error') || 'Errore sconosciuto';
