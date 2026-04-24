@@ -27,6 +27,8 @@ class SiteGenie_Admin {
         add_action( 'wp_ajax_sitegenie_delete_knowledge', [ $this, 'ajax_delete_knowledge' ] );
         add_action( 'wp_ajax_sitegenie_index_posts', [ $this, 'ajax_index_posts' ] );
         add_action( 'wp_ajax_sitegenie_generate_alt', [ $this, 'ajax_generate_alt' ] );
+        add_action( 'wp_ajax_sitegenie_toggle_component', [ $this, 'ajax_toggle_component' ] );
+        add_action( 'wp_ajax_sitegenie_delete_component', [ $this, 'ajax_delete_component' ] );
         add_filter( 'attachment_fields_to_edit', [ $this, 'add_alt_button_to_media' ], 10, 2 );
     }
 
@@ -95,6 +97,15 @@ class SiteGenie_Admin {
             'manage_options',
             'sitegenie-knowledge',
             [ $this, 'render_knowledge_page' ]
+        );
+
+        add_submenu_page(
+            'sitegenie',
+            'Componenti',
+            'Componenti',
+            'manage_options',
+            'sitegenie-components',
+            [ $this, 'render_components_page' ]
         );
     }
 
@@ -457,5 +468,44 @@ class SiteGenie_Admin {
         update_post_meta( $attachment_id, '_wp_attachment_image_alt', $alt_text );
 
         wp_send_json_success( [ 'alt_text' => $alt_text ] );
+    }
+
+    /**
+     * Renderizza la pagina Componenti
+     */
+    public function render_components_page() {
+        $components = SiteGenie_Components::get_all();
+        require_once SITEGENIE_PLUGIN_DIR . 'templates/components-page.php';
+    }
+
+    /**
+     * AJAX: toggle stato componente
+     */
+    public function ajax_toggle_component() {
+        check_ajax_referer( 'sitegenie_nonce', 'nonce' );
+        if ( ! current_user_can( 'manage_options' ) ) wp_send_json_error( 'Permessi insufficienti.' );
+
+        $slug   = sanitize_text_field( wp_unslash( $_POST['slug'] ?? '' ) );
+        $status = sanitize_text_field( wp_unslash( $_POST['status'] ?? '' ) );
+        if ( ! in_array( $status, [ 'active', 'inactive' ] ) ) wp_send_json_error( 'Stato non valido.' );
+
+        if ( $slug === '__all__' ) {
+            SiteGenie_Components::deactivate_all();
+        } else {
+            SiteGenie_Components::set_status( $slug, $status );
+        }
+        wp_send_json_success( 'Stato aggiornato.' );
+    }
+
+    /**
+     * AJAX: elimina componente
+     */
+    public function ajax_delete_component() {
+        check_ajax_referer( 'sitegenie_nonce', 'nonce' );
+        if ( ! current_user_can( 'manage_options' ) ) wp_send_json_error( 'Permessi insufficienti.' );
+
+        $slug = sanitize_text_field( wp_unslash( $_POST['slug'] ?? '' ) );
+        SiteGenie_Components::delete( $slug );
+        wp_send_json_success( 'Componente eliminato.' );
     }
 }
