@@ -4,7 +4,7 @@ if ( ! defined( 'ABSPATH' ) ) exit;
 /**
  * Connettore per Google Gemini API — con Function Calling
  */
-class SiteGenie_Gemini extends SiteGenie_API_Connector {
+class Jeenie_Gemini extends Jeenie_API_Connector {
 
     private $api_base = 'https://generativelanguage.googleapis.com/v1beta/models/';
 
@@ -42,7 +42,7 @@ class SiteGenie_Gemini extends SiteGenie_API_Connector {
         $response = $this->http_post( $request['url'], $body, $request['headers'] );
 
         if ( ! $response['success'] ) {
-            SiteGenie_Logger::log( 'gemini', 0, 0, 'error', $response['error'] );
+            Jeenie_Logger::log( 'gemini', 0, 0, 'error', $response['error'] );
             return $this->format_error( $response['error'], $response['code'] );
         }
 
@@ -51,13 +51,13 @@ class SiteGenie_Gemini extends SiteGenie_API_Connector {
 
         if ( empty( $text ) ) {
             $error = 'Risposta vuota da Gemini.';
-            SiteGenie_Logger::log( 'gemini', 0, 0, 'error', $error );
+            Jeenie_Logger::log( 'gemini', 0, 0, 'error', $error );
             return $this->format_error( $error );
         }
 
         $pt = $data['usageMetadata']['promptTokenCount']     ?? 0;
         $ct = $data['usageMetadata']['candidatesTokenCount'] ?? 0;
-        SiteGenie_Logger::log( 'gemini', $pt, $ct, 'success' );
+        Jeenie_Logger::log( 'gemini', $pt, $ct, 'success' );
 
         return $this->format_response( $text, $pt, $ct );
     }
@@ -85,7 +85,7 @@ class SiteGenie_Gemini extends SiteGenie_API_Connector {
             'parts' => [ [ 'text' => $message ] ],
         ];
 
-        $system_text  = SiteGenie_Admin::get_site_context();
+        $system_text  = Jeenie_Admin::get_site_context();
         $system_text .= "\n\nSei un assistente AI integrato nel pannello di amministrazione WordPress. ";
         $system_text .= "Puoi eseguire azioni reali sul sito usando i tool disponibili. ";
         $system_text .= "Quando l'utente chiede di creare, modificare, eliminare o recuperare contenuti, usa SEMPRE i tool appropriati. NON chiedere mai all'utente di eseguire comandi o tool. ";
@@ -99,7 +99,7 @@ class SiteGenie_Gemini extends SiteGenie_API_Connector {
             ],
             'contents'         => $contents,
             'tools'            => [
-                [ 'function_declarations' => SiteGenie_Tools::get_declarations() ]
+                [ 'function_declarations' => Jeenie_Tools::get_declarations() ]
             ],
             'generationConfig' => [
                 'maxOutputTokens' => $options['max_tokens']  ?? 1024,
@@ -118,7 +118,7 @@ class SiteGenie_Gemini extends SiteGenie_API_Connector {
             $response = $this->http_post( $request['url'], $body, $request['headers'] );
 
             if ( ! $response['success'] ) {
-                SiteGenie_Logger::log( 'gemini', $total_pt, $total_ct, 'error', $response['error'] );
+                Jeenie_Logger::log( 'gemini', $total_pt, $total_ct, 'error', $response['error'] );
                 return $this->format_error( $response['error'], $response['code'] );
             }
 
@@ -145,7 +145,7 @@ class SiteGenie_Gemini extends SiteGenie_API_Connector {
                     if ( isset( $part['text'] ) ) { $text .= $part['text']; }
                 }
                 if ( empty( $text ) ) $text = 'Operazione completata.';
-                SiteGenie_Logger::log( 'gemini', $total_pt, $total_ct, 'success' );
+                Jeenie_Logger::log( 'gemini', $total_pt, $total_ct, 'success' );
                 $result = $this->format_response( $text, $total_pt, $total_ct );
                 if ( $last_action ) $result['action_taken'] = $last_action;
                 return $result;
@@ -154,7 +154,7 @@ class SiteGenie_Gemini extends SiteGenie_API_Connector {
             // Esegui il tool
             $tool_name   = $function_call['name'];
             $tool_args   = $function_call['args'] ?? [];
-            $tool_result = SiteGenie_Tools::execute( $tool_name, $tool_args );
+            $tool_result = Jeenie_Tools::execute( $tool_name, $tool_args );
 
             // Tieni traccia dell'ultima azione "mutativa"
             if ( in_array( $tool_name, [ 'create_post', 'update_post', 'delete_post', 'create_custom_post', 'update_custom_post', 'moderate_comment', 'reply_comment', 'update_site_settings', 'create_user', 'create_product', 'add_menu_item', 'create_component' ] ) ) {
@@ -184,7 +184,7 @@ class SiteGenie_Gemini extends SiteGenie_API_Connector {
 
         // Fallback se raggiunto il limite di turni
         $fallback = $last_action['result']['message'] ?? 'Operazione completata.';
-        SiteGenie_Logger::log( 'gemini', $total_pt, $total_ct, 'success' );
+        Jeenie_Logger::log( 'gemini', $total_pt, $total_ct, 'success' );
         $result = $this->format_response( $fallback, $total_pt, $total_ct );
         if ( $last_action ) $result['action_taken'] = $last_action;
         return $result;
@@ -230,7 +230,7 @@ class SiteGenie_Gemini extends SiteGenie_API_Connector {
             $total_ct = $json['usageMetadata']['candidatesTokenCount'] ?? $total_ct;
         });
 
-        SiteGenie_Logger::log( 'gemini', $total_pt, $total_ct, 'success' );
+        Jeenie_Logger::log( 'gemini', $total_pt, $total_ct, 'success' );
         echo "data: [DONE]\n\n";
     }
 
