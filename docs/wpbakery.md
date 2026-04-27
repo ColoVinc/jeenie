@@ -73,7 +73,7 @@ class Sg_Complex_Module_Example {
                 'as_parent' => array('only' => 'sg_complex_module_example_item'), // Parametro che specifica quali elementi può contenere
                 'content_element' => true,
                 'show_settings_on_create' => true,
-                'category' => 'Sitegenie components',
+                'category' => 'Jeenie components',
                 'is_container' => true,
                 'params' => array(
                     /* Parametri di WPBakery */
