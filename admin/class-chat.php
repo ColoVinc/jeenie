@@ -49,10 +49,10 @@ class Jeenie_Chat {
      */
     public function ajax_chat() {
         check_ajax_referer( 'jeenie_nonce', 'nonce' );
-        if ( ! current_user_can( 'edit_posts' ) ) wp_send_json_error( __( 'Permessi insufficienti.', 'jeenie-ai-assistant' ) );
+        if ( ! current_user_can( 'edit_posts' ) ) wp_send_json_error( __( 'Permessi insufficienti.', 'jeenie' ) );
 
         $message = sanitize_textarea_field( wp_unslash( $_POST['message'] ?? '' ) );
-        if ( empty( $message ) ) wp_send_json_error( __( 'Messaggio vuoto.', 'jeenie-ai-assistant' ) );
+        if ( empty( $message ) ) wp_send_json_error( __( 'Messaggio vuoto.', 'jeenie' ) );
 
         $user_id         = get_current_user_id();
         $conversation_id = intval( $_POST['conversation_id'] ?? 0 );
@@ -70,9 +70,9 @@ class Jeenie_Chat {
         }
 
         $connector = Jeenie_Admin::get_connector();
-        if ( ! $connector ) wp_send_json_error( __( 'API key non configurata. Vai in Jeenie → Impostazioni.', 'jeenie-ai-assistant' ) );
+        if ( ! $connector ) wp_send_json_error( __( 'API key non configurata. Vai in Jeenie → Impostazioni.', 'jeenie' ) );
 
-        if ( Jeenie_Admin::is_rate_limited() ) wp_send_json_error( __( 'Hai raggiunto il limite di richieste orarie. Riprova più tardi.', 'jeenie-ai-assistant' ) );
+        if ( Jeenie_Admin::is_rate_limited() ) wp_send_json_error( __( 'Hai raggiunto il limite di richieste orarie. Riprova più tardi.', 'jeenie' ) );
 
         $response = $connector->generate_with_tools( $clean_history, $message );
         if ( ! $response['success'] ) wp_send_json_error( $response['error'] );
@@ -102,13 +102,13 @@ class Jeenie_Chat {
     public function ajax_chat_stream() {
         check_ajax_referer( 'jeenie_nonce', 'nonce' );
         if ( ! current_user_can( 'edit_posts' ) ) {
-            $this->sse_error( __( 'Permessi insufficienti.', 'jeenie-ai-assistant' ) );
+            $this->sse_error( __( 'Permessi insufficienti.', 'jeenie' ) );
             return;
         }
 
         $message = sanitize_textarea_field( wp_unslash( $_GET['message'] ?? '' ) );
         if ( empty( $message ) ) {
-            $this->sse_error( __( 'Messaggio vuoto.', 'jeenie-ai-assistant' ) );
+            $this->sse_error( __( 'Messaggio vuoto.', 'jeenie' ) );
             return;
         }
 
@@ -128,12 +128,12 @@ class Jeenie_Chat {
 
         $connector = Jeenie_Admin::get_connector();
         if ( ! $connector ) {
-            $this->sse_error( __( 'API key non configurata.', 'jeenie-ai-assistant' ) );
+            $this->sse_error( __( 'API key non configurata.', 'jeenie' ) );
             return;
         }
 
         if ( Jeenie_Admin::is_rate_limited() ) {
-            $this->sse_error( __( 'Limite richieste orarie raggiunto.', 'jeenie-ai-assistant' ) );
+            $this->sse_error( __( 'Limite richieste orarie raggiunto.', 'jeenie' ) );
             return;
         }
 
