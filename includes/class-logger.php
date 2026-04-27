@@ -4,7 +4,7 @@ if ( ! defined( 'ABSPATH' ) ) exit;
 /**
  * Logger — salva ogni chiamata API nel database
  */
-class SiteGenie_Logger {
+class Jeenie_Logger {
 
     /**
      * Salva un log nel DB
@@ -20,7 +20,7 @@ class SiteGenie_Logger {
 
         // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery -- custom table, write operation
         $wpdb->insert(
-            $wpdb->prefix . 'sitegenie_logs',
+            $wpdb->prefix . 'jeenie_logs',
             [
                 'created_at'         => current_time( 'mysql' ),
                 'provider'           => $provider,
@@ -43,7 +43,7 @@ class SiteGenie_Logger {
         // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- custom table, dynamic data
         return $wpdb->get_results(
             $wpdb->prepare(
-                "SELECT * FROM {$wpdb->prefix}sitegenie_logs ORDER BY created_at DESC LIMIT %d OFFSET %d",
+                "SELECT * FROM {$wpdb->prefix}jeenie_logs ORDER BY created_at DESC LIMIT %d OFFSET %d",
                 $per_page,
                 $offset
             ),
@@ -57,7 +57,7 @@ class SiteGenie_Logger {
     public static function count_logs(): int {
         global $wpdb;
         // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- custom table, dynamic data
-        return (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$wpdb->prefix}sitegenie_logs" );
+        return (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$wpdb->prefix}jeenie_logs" );
     }
 
     /**
@@ -72,7 +72,7 @@ class SiteGenie_Logger {
                 COUNT(*) as total_calls,
                 SUM(prompt_tokens + completion_tokens) as total_tokens,
                 SUM(CASE WHEN status = 'error' THEN 1 ELSE 0 END) as total_errors
-            FROM {$wpdb->prefix}sitegenie_logs",
+            FROM {$wpdb->prefix}jeenie_logs",
             ARRAY_A
         );
 
@@ -85,7 +85,7 @@ class SiteGenie_Logger {
     public static function clear_logs(): void {
         global $wpdb;
         // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- custom table, truncate operation
-        $wpdb->query( "TRUNCATE TABLE {$wpdb->prefix}sitegenie_logs" );
+        $wpdb->query( "TRUNCATE TABLE {$wpdb->prefix}jeenie_logs" );
     }
 
     /**
@@ -99,7 +99,7 @@ class SiteGenie_Logger {
                     COUNT(*) as calls,
                     SUM(prompt_tokens) as prompt_tokens,
                     SUM(completion_tokens) as completion_tokens
-             FROM {$wpdb->prefix}sitegenie_logs
+             FROM {$wpdb->prefix}jeenie_logs
              WHERE created_at >= DATE_SUB(NOW(), INTERVAL %d DAY)
              GROUP BY DATE(created_at)
              ORDER BY day ASC",
@@ -115,7 +115,7 @@ class SiteGenie_Logger {
         // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- custom table
         return $wpdb->get_results(
             "SELECT provider, COUNT(*) as calls, SUM(prompt_tokens + completion_tokens) as tokens
-             FROM {$wpdb->prefix}sitegenie_logs
+             FROM {$wpdb->prefix}jeenie_logs
              GROUP BY provider
              ORDER BY calls DESC",
             ARRAY_A
