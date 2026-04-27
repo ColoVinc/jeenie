@@ -2,24 +2,24 @@ jQuery(function ($) {
 
     // Toggle sezioni provider
     function toggleProvider() {
-        var provider = $('#sitegenie-provider-select').val();
-        $('.sitegenie-provider-section').hide();
-        $('#sitegenie-provider-' + provider).show();
+        var provider = $('#jeenie-provider-select').val();
+        $('.jeenie-provider-section').hide();
+        $('#jeenie-provider-' + provider).show();
     }
-    $('#sitegenie-provider-select').on('change', toggleProvider);
+    $('#jeenie-provider-select').on('change', toggleProvider);
     toggleProvider();
 
     // Test connessione API
-    $('#sitegenie-test-api').on('click', function () {
+    $('#jeenie-test-api').on('click', function () {
         const $btn    = $(this);
-        const $result = $('#sitegenie-test-result');
+        const $result = $('#jeenie-test-result');
 
         $btn.prop('disabled', true).text('⏳ Test in corso...');
         $result.removeClass('success error').text('');
 
-        $.post(sitegenie.ajax_url, {
-            action: 'sitegenie_test_api',
-            nonce:  sitegenie.nonce,
+        $.post(jeenie.ajax_url, {
+            action: 'jeenie_test_api',
+            nonce:  jeenie.nonce,
         })
         .done(function (res) {
             if (res.success) {
@@ -37,15 +37,15 @@ jQuery(function ($) {
     });
 
     // Svuota log
-    $('#sitegenie-clear-logs').on('click', function () {
+    $('#jeenie-clear-logs').on('click', function () {
         if ( ! confirm( 'Sei sicuro di voler svuotare tutti i log? L\'operazione non è reversibile.' ) ) return;
 
         const $btn = $(this);
         $btn.prop('disabled', true).text('⏳ Svuotamento...');
 
-        $.post(sitegenie.ajax_url, {
-            action: 'sitegenie_clear_logs',
-            nonce:  sitegenie.nonce,
+        $.post(jeenie.ajax_url, {
+            action: 'jeenie_clear_logs',
+            nonce:  jeenie.nonce,
         })
         .done(function (res) {
             if (res.success) {
@@ -65,11 +65,11 @@ jQuery(function ($) {
     // ── Componenti ────────────────────────────────────────────
 
     // Toggle stato componente
-    $(document).on('click', '.sitegenie-comp-toggle', function () {
+    $(document).on('click', '.jeenie-comp-toggle', function () {
         var $btn = $(this);
-        $.post(sitegenie.ajax_url, {
-            action: 'sitegenie_toggle_component',
-            nonce: sitegenie.nonce,
+        $.post(jeenie.ajax_url, {
+            action: 'jeenie_toggle_component',
+            nonce: jeenie.nonce,
             slug: $btn.data('slug'),
             status: $btn.data('status'),
         }).done(function (res) {
@@ -79,11 +79,11 @@ jQuery(function ($) {
     });
 
     // Elimina componente
-    $(document).on('click', '.sitegenie-comp-delete', function () {
+    $(document).on('click', '.jeenie-comp-delete', function () {
         if (!confirm('Eliminare questo componente? I file verranno rimossi.')) return;
-        $.post(sitegenie.ajax_url, {
-            action: 'sitegenie_delete_component',
-            nonce: sitegenie.nonce,
+        $.post(jeenie.ajax_url, {
+            action: 'jeenie_delete_component',
+            nonce: jeenie.nonce,
             slug: $(this).data('slug'),
         }).done(function (res) {
             if (res.success) location.reload();
@@ -92,24 +92,24 @@ jQuery(function ($) {
     });
 
     // Disattiva tutti
-    $('#sitegenie-deactivate-all').on('click', function () {
+    $('#jeenie-deactivate-all').on('click', function () {
         if (!confirm('Disattivare tutti i componenti?')) return;
-        $.post(sitegenie.ajax_url, {
-            action: 'sitegenie_toggle_component',
-            nonce: sitegenie.nonce,
+        $.post(jeenie.ajax_url, {
+            action: 'jeenie_toggle_component',
+            nonce: jeenie.nonce,
             slug: '__all__',
             status: 'inactive',
         }).done(function () { location.reload(); });
     });
 
     // Mostra errore componente
-    $(document).on('click', '.sitegenie-comp-error', function () {
+    $(document).on('click', '.jeenie-comp-error', function () {
         var msg = $(this).data('error') || 'Errore sconosciuto';
         alert('Errore componente:\n\n' + msg);
     });
 
     // Mostra dettaglio errore nei log
-    $(document).on('click', '.sitegenie-log-error', function () {
+    $(document).on('click', '.jeenie-log-error', function () {
         var msg = $(this).data('error') || 'Errore sconosciuto';
         var $modal = $('<div style="position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:999999;display:flex;align-items:center;justify-content:center;">'
             + '<div style="background:#fff;border-radius:8px;padding:24px;max-width:500px;width:90%;box-shadow:0 8px 32px rgba(0,0,0,0.2);">'
@@ -125,55 +125,55 @@ jQuery(function ($) {
     // ── Knowledge Base ───────────────────────────────────────────
 
     // Carica file .txt nel textarea
-    $('#sitegenie-kb-file').on('change', function () {
+    $('#jeenie-kb-file').on('change', function () {
         var file = this.files[0];
         if (!file) return;
         var reader = new FileReader();
         reader.onload = function (e) {
-            $('#sitegenie-kb-content').val(e.target.result);
-            if (!$('#sitegenie-kb-name').val()) {
-                $('#sitegenie-kb-name').val(file.name.replace(/\.txt$/i, ''));
+            $('#jeenie-kb-content').val(e.target.result);
+            if (!$('#jeenie-kb-name').val()) {
+                $('#jeenie-kb-name').val(file.name.replace(/\.txt$/i, ''));
             }
         };
         reader.readAsText(file);
     });
 
     // Upload documento
-    $('#sitegenie-kb-upload').on('click', function () {
-        var name    = $('#sitegenie-kb-name').val().trim();
-        var content = $('#sitegenie-kb-content').val().trim();
-        if (!name || !content) { $('#sitegenie-kb-result').show().text('⚠️ Nome e contenuto obbligatori.'); return; }
+    $('#jeenie-kb-upload').on('click', function () {
+        var name    = $('#jeenie-kb-name').val().trim();
+        var content = $('#jeenie-kb-content').val().trim();
+        if (!name || !content) { $('#jeenie-kb-result').show().text('⚠️ Nome e contenuto obbligatori.'); return; }
 
         var $btn = $(this);
         $btn.prop('disabled', true).text('⏳ Salvataggio...');
 
-        $.post(sitegenie.ajax_url, {
-            action: 'sitegenie_upload_knowledge',
-            nonce: sitegenie.nonce,
+        $.post(jeenie.ajax_url, {
+            action: 'jeenie_upload_knowledge',
+            nonce: jeenie.nonce,
             doc_name: name,
             doc_content: content,
         }).done(function (res) {
             if (res.success) {
-                $('#sitegenie-kb-result').show().css('color', '#00a32a').text('✅ ' + res.data.message);
+                $('#jeenie-kb-result').show().css('color', '#00a32a').text('✅ ' + res.data.message);
                 setTimeout(function () { location.reload(); }, 1000);
             } else {
-                $('#sitegenie-kb-result').show().css('color', '#d63638').text('❌ ' + res.data);
+                $('#jeenie-kb-result').show().css('color', '#d63638').text('❌ ' + res.data);
             }
         }).fail(function () {
-            $('#sitegenie-kb-result').show().css('color', '#d63638').text('❌ Errore di connessione.');
+            $('#jeenie-kb-result').show().css('color', '#d63638').text('❌ Errore di connessione.');
         }).always(function () {
             $btn.prop('disabled', false).html('<i class="fa-solid fa-plus"></i> Salva Documento');
         });
     });
 
     // Elimina documento
-    $(document).on('click', '.sitegenie-kb-delete', function () {
+    $(document).on('click', '.jeenie-kb-delete', function () {
         var name = $(this).data('name');
         if (!confirm('Eliminare il documento "' + name + '"?')) return;
 
-        $.post(sitegenie.ajax_url, {
-            action: 'sitegenie_delete_knowledge',
-            nonce: sitegenie.nonce,
+        $.post(jeenie.ajax_url, {
+            action: 'jeenie_delete_knowledge',
+            nonce: jeenie.nonce,
             doc_name: name,
         }).done(function (res) {
             if (res.success) location.reload();
@@ -182,22 +182,22 @@ jQuery(function ($) {
     });
 
     // Indicizza tutti i post (RAG)
-    $('#sitegenie-index-posts').on('click', function () {
+    $('#jeenie-index-posts').on('click', function () {
         var $btn = $(this);
         $btn.prop('disabled', true).html('<i class="fa-solid fa-spinner fa-spin"></i> Indicizzazione...');
 
-        $.post(sitegenie.ajax_url, {
-            action: 'sitegenie_index_posts',
-            nonce: sitegenie.nonce,
+        $.post(jeenie.ajax_url, {
+            action: 'jeenie_index_posts',
+            nonce: jeenie.nonce,
         }).done(function (res) {
             if (res.success) {
-                $('#sitegenie-index-result').show().css('color', '#00a32a').text('✅ ' + res.data.message);
+                $('#jeenie-index-result').show().css('color', '#00a32a').text('✅ ' + res.data.message);
                 setTimeout(function () { location.reload(); }, 1500);
             } else {
-                $('#sitegenie-index-result').show().css('color', '#d63638').text('❌ ' + res.data);
+                $('#jeenie-index-result').show().css('color', '#d63638').text('❌ ' + res.data);
             }
         }).fail(function () {
-            $('#sitegenie-index-result').show().css('color', '#d63638').text('❌ Errore di connessione.');
+            $('#jeenie-index-result').show().css('color', '#d63638').text('❌ Errore di connessione.');
         }).always(function () {
             $btn.prop('disabled', false).html('<i class="fa-solid fa-arrows-rotate"></i> Indicizza tutti i post');
         });
