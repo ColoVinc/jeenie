@@ -2,9 +2,9 @@
 if ( ! defined( 'ABSPATH' ) ) exit;
 
 /**
- * SiteGenie_Components — gestisce i componenti generati dall'AI
+ * Jeenie_Components — gestisce i componenti generati dall'AI
  */
-class SiteGenie_Components {
+class Jeenie_Components {
 
     private static $components_dir = null;
 
@@ -13,7 +13,7 @@ class SiteGenie_Components {
      */
     public static function get_dir(): string {
         if ( null === self::$components_dir ) {
-            self::$components_dir = SITEGENIE_PLUGIN_DIR . 'components/';
+            self::$components_dir = JEENIE_PLUGIN_DIR . 'components/';
         }
         return self::$components_dir;
     }
@@ -23,7 +23,7 @@ class SiteGenie_Components {
      */
     public static function load_active(): void {
         // Safe mode: disattiva tutto via URL
-        if ( isset( $_GET['sitegenie_safe_mode'] ) && $_GET['sitegenie_safe_mode'] === '1' ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+        if ( isset( $_GET['jeenie_safe_mode'] ) && $_GET['jeenie_safe_mode'] === '1' ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
             self::deactivate_all();
             return;
         }
@@ -83,9 +83,9 @@ class SiteGenie_Components {
 
         // Salva metadati nel DB
         global $wpdb;
-        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery -- custom table
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- custom table, write operation
         $wpdb->replace(
-            $wpdb->prefix . 'sitegenie_components',
+            $wpdb->prefix . 'jeenie_components',
             [
                 'slug'       => $slug,
                 'name'       => sanitize_text_field( $name ),
@@ -105,7 +105,7 @@ class SiteGenie_Components {
     public static function get_all(): array {
         global $wpdb;
         // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- custom table
-        return $wpdb->get_results( "SELECT * FROM {$wpdb->prefix}sitegenie_components ORDER BY created_at DESC", ARRAY_A ) ?: [];
+        return $wpdb->get_results( "SELECT * FROM {$wpdb->prefix}jeenie_components ORDER BY created_at DESC", ARRAY_A ) ?: [];
     }
 
     /**
@@ -115,7 +115,7 @@ class SiteGenie_Components {
         global $wpdb;
         // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- custom table
         $wpdb->update(
-            $wpdb->prefix . 'sitegenie_components',
+            $wpdb->prefix . 'jeenie_components',
             [ 'status' => $status, 'error_message' => $error ],
             [ 'slug' => $slug ],
             [ '%s', '%s' ],
@@ -129,7 +129,7 @@ class SiteGenie_Components {
     public static function deactivate_all(): void {
         global $wpdb;
         // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- custom table
-        $wpdb->query( "UPDATE {$wpdb->prefix}sitegenie_components SET status = 'inactive'" );
+        $wpdb->query( "UPDATE {$wpdb->prefix}jeenie_components SET status = 'inactive'" );
     }
 
     /**
@@ -145,13 +145,19 @@ class SiteGenie_Components {
                 \RecursiveIteratorIterator::CHILD_FIRST
             );
             foreach ( $files as $file ) {
-                $file->isDir() ? rmdir( $file->getRealPath() ) : wp_delete_file( $file->getRealPath() );
+                if ( $file->isDir() ) {
+                    // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_rmdir -- removing plugin-generated component directories
+                    rmdir( $file->getRealPath() );
+                } else {
+                    wp_delete_file( $file->getRealPath() );
+                }
             }
+            // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_rmdir -- removing plugin-generated component directory
             rmdir( $dir );
         }
 
         global $wpdb;
         // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- custom table
-        $wpdb->delete( $wpdb->prefix . 'sitegenie_components', [ 'slug' => $slug ], [ '%s' ] );
+        $wpdb->delete( $wpdb->prefix . 'jeenie_components', [ 'slug' => $slug ], [ '%s' ] );
     }
 }
