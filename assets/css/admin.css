@@ -1,5 +1,5 @@
 /* ================================
-   SiteGenie — Admin CSS
+   Jeenie — Admin CSS
    Solo stili custom non coperti da Bootstrap
    ================================ */
 
@@ -7,19 +7,19 @@
 .card {
     max-width: inherit !important;
 }
-.sitegenie-header {
+.jeenie-header {
     background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
 }
 
 /* Stat cards (custom colors) */
-.sitegenie-stat-number {
+.jeenie-stat-number {
     display: block;
     font-size: 32px;
     font-weight: 700;
     color: #0f3460;
     margin-bottom: 10px;
 }
-.sitegenie-stat-label {
+.jeenie-stat-label {
     font-size: 12px;
     color: #757575;
     text-transform: uppercase;
@@ -27,9 +27,9 @@
 }
 
 /* Test API result colors (usato da admin.js) */
-#sitegenie-test-result {
+#jeenie-test-result {
     font-size: 13px;
     font-weight: 500;
 }
-#sitegenie-test-result.success { color: #00a32a; }
-#sitegenie-test-result.error   { color: #d63638; }
+#jeenie-test-result.success { color: #00a32a; }
+#jeenie-test-result.error   { color: #d63638; }
