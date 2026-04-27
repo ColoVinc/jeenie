@@ -39,7 +39,7 @@ class Jeenie_Admin {
         if ( ! get_transient( 'jeenie_activated' ) ) return;
         delete_transient( 'jeenie_activated' );
         $url = admin_url( 'admin.php?page=jeenie' );
-        echo '<div class="notice notice-success is-dismissible"><p><strong>🤖 ' . esc_html__( 'Jeenie attivato!', 'jeenie-ai-assistant' ) . '</strong> <a href="' . esc_url( $url ) . '">' . esc_html__( 'Configura la tua API key', 'jeenie-ai-assistant' ) . '</a> ' . esc_html__( 'per iniziare.', 'jeenie-ai-assistant' ) . '</p></div>';
+        echo '<div class="notice notice-success is-dismissible"><p><strong>🤖 ' . esc_html__( 'Jeenie attivato!', 'jeenie' ) . '</strong> <a href="' . esc_url( $url ) . '">' . esc_html__( 'Configura la tua API key', 'jeenie' ) . '</a> ' . esc_html__( 'per iniziare.', 'jeenie' ) . '</p></div>';
     }
 
     /**
@@ -55,7 +55,7 @@ class Jeenie_Admin {
         if ( ! empty( $key ) ) return;
 
         $url = admin_url( 'admin.php?page=jeenie' );
-        echo '<div class="notice notice-warning is-dismissible"><p><strong>🤖 Jeenie:</strong> ' . esc_html__( 'API key non configurata.', 'jeenie-ai-assistant' ) . ' <a href="' . esc_url( $url ) . '">' . esc_html__( 'Vai alle impostazioni', 'jeenie-ai-assistant' ) . '</a>.</p></div>';
+        echo '<div class="notice notice-warning is-dismissible"><p><strong>🤖 Jeenie:</strong> ' . esc_html__( 'API key non configurata.', 'jeenie' ) . ' <a href="' . esc_url( $url ) . '">' . esc_html__( 'Vai alle impostazioni', 'jeenie' ) . '</a>.</p></div>';
     }
 
     /**
@@ -260,12 +260,12 @@ class Jeenie_Admin {
         check_ajax_referer( 'jeenie_nonce', 'nonce' );
 
         if ( ! current_user_can( 'manage_options' ) ) {
-            wp_send_json_error( __( 'Permessi insufficienti.', 'jeenie-ai-assistant' ) );
+            wp_send_json_error( __( 'Permessi insufficienti.', 'jeenie' ) );
         }
 
         $connector = self::get_connector();
         if ( ! $connector ) {
-            wp_send_json_error( __( 'API key non configurata.', 'jeenie-ai-assistant' ) );
+            wp_send_json_error( __( 'API key non configurata.', 'jeenie' ) );
         }
 
         $response = $connector->generate( 'Rispondi solo con: "Jeenie connesso correttamente!"' );
@@ -426,7 +426,7 @@ class Jeenie_Admin {
         $form_fields['jeenie_alt'] = [
             'label' => '',
             'input' => 'html',
-            'html'  => '<button type="button" class="button jeenie-generate-alt" data-id="' . esc_attr( $post->ID ) . '">🤖 ' . esc_html__( 'Genera Alt Text con AI', 'jeenie-ai-assistant' ) . '</button>',
+            'html'  => '<button type="button" class="button jeenie-generate-alt" data-id="' . esc_attr( $post->ID ) . '">🤖 ' . esc_html__( 'Genera Alt Text con AI', 'jeenie' ) . '</button>',
         ];
 
         return $form_fields;
