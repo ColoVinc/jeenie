@@ -1,50 +1,50 @@
 <?php if ( ! defined( 'ABSPATH' ) ) exit; ?>
 
-<div id="sitegenie-chat-widget" class="sitegenie-chat-widget">
+<div id="jeenie-chat-widget" class="jeenie-chat-widget">
 
-    <button id="sitegenie-chat-toggle" class="sitegenie-chat-toggle" title="<?php esc_attr_e( 'SiteGenie AI', 'sitegenie' ); ?>">
-        <span class="sitegenie-chat-icon"><i class="fa-solid fa-robot"></i></span>
-        <span class="sitegenie-chat-close" style="display:none;"><i class="fa-solid fa-x"></i></span>
+    <button id="jeenie-chat-toggle" class="jeenie-chat-toggle" title="<?php esc_attr_e( 'Jeenie AI', 'jeenie-ai-assistant' ); ?>">
+        <span class="jeenie-chat-icon"><i class="fa-solid fa-robot"></i></span>
+        <span class="jeenie-chat-close" style="display:none;"><i class="fa-solid fa-x"></i></span>
     </button>
 
-    <div id="sitegenie-chat-window" class="sitegenie-chat-window" style="display:none;">
+    <div id="jeenie-chat-window" class="jeenie-chat-window" style="display:none;">
 
-        <div class="sitegenie-chat-header">
-            <span class="sitegenie-chat-header-title"><i class="fa-solid fa-robot"></i> SiteGenie</span>
-            <div class="sitegenie-chat-header-actions">
-                <button id="sitegenie-history-btn" class="sitegenie-header-btn" title="<?php esc_attr_e( 'Cronologia', 'sitegenie' ); ?>">
+        <div class="jeenie-chat-header">
+            <span class="jeenie-chat-header-title"><i class="fa-solid fa-robot"></i> Jeenie</span>
+            <div class="jeenie-chat-header-actions">
+                <button id="jeenie-history-btn" class="jeenie-header-btn" title="<?php esc_attr_e( 'Cronologia', 'jeenie-ai-assistant' ); ?>">
                     <i class="fa-solid fa-clock-rotate-left"></i>
                 </button>
-                <button id="sitegenie-new-chat-btn" class="sitegenie-header-btn" title="<?php esc_attr_e( 'Nuova chat', 'sitegenie' ); ?>">
+                <button id="jeenie-new-chat-btn" class="jeenie-header-btn" title="<?php esc_attr_e( 'Nuova chat', 'jeenie-ai-assistant' ); ?>">
                     <i class="fa-solid fa-plus"></i>
                 </button>
             </div>
         </div>
 
-        <div id="sitegenie-history-panel" class="sitegenie-history-panel" style="display:none;">
-            <div class="sitegenie-history-header">
-                <span><?php esc_html_e( 'Cronologia', 'sitegenie' ); ?></span>
-                <button id="sitegenie-history-back" class="sitegenie-header-btn"><i class="fa-solid fa-xmark"></i></button>
+        <div id="jeenie-history-panel" class="jeenie-history-panel" style="display:none;">
+            <div class="jeenie-history-header">
+                <span><?php esc_html_e( 'Cronologia', 'jeenie-ai-assistant' ); ?></span>
+                <button id="jeenie-history-back" class="jeenie-header-btn"><i class="fa-solid fa-xmark"></i></button>
             </div>
-            <div id="sitegenie-history-list" class="sitegenie-history-list"></div>
+            <div id="jeenie-history-list" class="jeenie-history-list"></div>
         </div>
 
-        <div id="sitegenie-chat-main">
-            <div id="sitegenie-chat-messages" class="sitegenie-chat-messages">
-                <div class="sitegenie-chat-message sitegenie-chat-message--ai">
-                    <?php esc_html_e( 'Ciao! Sono il tuo assistente AI. Come posso aiutarti oggi?', 'sitegenie' ); ?>
+        <div id="jeenie-chat-main">
+            <div id="jeenie-chat-messages" class="jeenie-chat-messages">
+                <div class="jeenie-chat-message jeenie-chat-message--ai">
+                    <?php esc_html_e( 'Ciao! Sono il tuo assistente AI. Come posso aiutarti oggi?', 'jeenie-ai-assistant' ); ?>
                 </div>
             </div>
 
-            <div class="sitegenie-chat-suggestions">
-                <button class="sitegenie-suggestion" data-msg="<?php esc_attr_e( 'Dammi 5 idee per articoli del blog', 'sitegenie' ); ?>"><i class="fa-solid fa-lightbulb"></i> <?php esc_html_e( 'Idee articoli', 'sitegenie' ); ?></button>
-                <button class="sitegenie-suggestion" data-msg="<?php esc_attr_e( 'Come posso migliorare la SEO del sito?', 'sitegenie' ); ?>"><i class="fa-solid fa-magnifying-glass"></i> <?php esc_html_e( 'Consigli SEO', 'sitegenie' ); ?></button>
-                <button class="sitegenie-suggestion" data-msg="<?php esc_attr_e( 'Scrivi un post breve su un argomento a mia scelta', 'sitegenie' ); ?>"><i class="fa-solid fa-pen"></i> <?php esc_html_e( 'Scrivi un post', 'sitegenie' ); ?></button>
+            <div class="jeenie-chat-suggestions">
+                <button class="jeenie-suggestion" data-msg="<?php esc_attr_e( 'Dammi 5 idee per articoli del blog', 'jeenie-ai-assistant' ); ?>"><i class="fa-solid fa-lightbulb"></i> <?php esc_html_e( 'Idee articoli', 'jeenie-ai-assistant' ); ?></button>
+                <button class="jeenie-suggestion" data-msg="<?php esc_attr_e( 'Come posso migliorare la SEO del sito?', 'jeenie-ai-assistant' ); ?>"><i class="fa-solid fa-magnifying-glass"></i> <?php esc_html_e( 'Consigli SEO', 'jeenie-ai-assistant' ); ?></button>
+                <button class="jeenie-suggestion" data-msg="<?php esc_attr_e( 'Scrivi un post breve su un argomento a mia scelta', 'jeenie-ai-assistant' ); ?>"><i class="fa-solid fa-pen"></i> <?php esc_html_e( 'Scrivi un post', 'jeenie-ai-assistant' ); ?></button>
             </div>
 
-            <div class="sitegenie-chat-input-wrap">
-                <textarea id="sitegenie-chat-input" class="sitegenie-chat-textarea" placeholder="<?php esc_attr_e( 'Scrivi un messaggio...', 'sitegenie' ); ?>" rows="2"></textarea>
-                <button id="sitegenie-chat-send" class="sitegenie-btn-send" title="<?php esc_attr_e( 'Invia', 'sitegenie' ); ?>">
+            <div class="jeenie-chat-input-wrap">
+                <textarea id="jeenie-chat-input" class="jeenie-chat-textarea" placeholder="<?php esc_attr_e( 'Scrivi un messaggio...', 'jeenie-ai-assistant' ); ?>" rows="2"></textarea>
+                <button id="jeenie-chat-send" class="jeenie-btn-send" title="<?php esc_attr_e( 'Invia', 'jeenie-ai-assistant' ); ?>">
                     <i class="fa-solid fa-paper-plane"></i>
                 </button>
             </div>
