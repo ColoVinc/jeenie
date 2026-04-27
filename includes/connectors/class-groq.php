@@ -4,7 +4,7 @@ if ( ! defined( 'ABSPATH' ) ) exit;
 /**
  * Connettore per Groq API — compatibile con formato OpenAI
  */
-class SiteGenie_Groq extends SiteGenie_OpenAI {
+class Jeenie_Groq extends Jeenie_OpenAI {
 
     private $groq_base = 'https://api.groq.com/openai/v1/chat/completions';
 
