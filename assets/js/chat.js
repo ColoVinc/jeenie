@@ -1,27 +1,27 @@
 jQuery(function ($) {
 
-    const $toggle   = $('#sitegenie-chat-toggle');
-    const $window   = $('#sitegenie-chat-window');
-    const $messages = $('#sitegenie-chat-messages');
-    const $input    = $('#sitegenie-chat-input');
-    const $send     = $('#sitegenie-chat-send');
-    const $main     = $('#sitegenie-chat-main');
-    const $histPanel = $('#sitegenie-history-panel');
-    const $histList  = $('#sitegenie-history-list');
+    const $toggle   = $('#jeenie-chat-toggle');
+    const $window   = $('#jeenie-chat-window');
+    const $messages = $('#jeenie-chat-messages');
+    const $input    = $('#jeenie-chat-input');
+    const $send     = $('#jeenie-chat-send');
+    const $main     = $('#jeenie-chat-main');
+    const $histPanel = $('#jeenie-history-panel');
+    const $histList  = $('#jeenie-history-list');
 
-    const STORAGE_KEY_MESSAGES = 'sitegenie_messages';
-    const STORAGE_KEY_SESSION  = 'sitegenie_session';
-    const STORAGE_KEY_CONV_ID  = 'sitegenie_conv_id';
+    const STORAGE_KEY_MESSAGES = 'jeenie_messages';
+    const STORAGE_KEY_SESSION  = 'jeenie_session';
+    const STORAGE_KEY_CONV_ID  = 'jeenie_conv_id';
 
     let currentConversationId = 0;
 
     // Session check
     var savedSession = sessionStorage.getItem(STORAGE_KEY_SESSION);
-    if (savedSession && savedSession !== sitegenie_chat.session_id) {
+    if (savedSession && savedSession !== jeenie_chat.session_id) {
         sessionStorage.removeItem(STORAGE_KEY_MESSAGES);
         sessionStorage.removeItem(STORAGE_KEY_CONV_ID);
     }
-    sessionStorage.setItem(STORAGE_KEY_SESSION, sitegenie_chat.session_id);
+    sessionStorage.setItem(STORAGE_KEY_SESSION, jeenie_chat.session_id);
 
     const toolLabels = {
         create_post:            '✅ Post creato',
@@ -54,13 +54,13 @@ jQuery(function ($) {
     $toggle.on('click', function () {
         const isOpen = $window.is(':visible');
         $window.toggle(!isOpen);
-        $('.sitegenie-chat-icon').toggle(isOpen);
-        $('.sitegenie-chat-close').toggle(!isOpen);
+        $('.jeenie-chat-icon').toggle(isOpen);
+        $('.jeenie-chat-close').toggle(!isOpen);
         if (!isOpen) { $input.focus(); scrollToBottom(); }
     });
 
     // ── Suggerimenti ──────────────────────────────────────────────
-    $(document).on('click', '.sitegenie-suggestion', function () {
+    $(document).on('click', '.jeenie-suggestion', function () {
         $input.val($(this).data('msg'));
         sendMessage();
     });
@@ -72,48 +72,48 @@ jQuery(function ($) {
     });
 
     // ── Nuova chat ────────────────────────────────────────────────
-    $('#sitegenie-new-chat-btn').on('click', function () {
+    $('#jeenie-new-chat-btn').on('click', function () {
         currentConversationId = 0;
         sessionStorage.removeItem(STORAGE_KEY_MESSAGES);
         sessionStorage.removeItem(STORAGE_KEY_CONV_ID);
         $messages.empty();
         appendMessage('Ciao! Sono il tuo assistente AI. Come posso aiutarti oggi?', 'ai');
-        $('.sitegenie-chat-suggestions').show();
+        $('.jeenie-chat-suggestions').show();
         $histPanel.hide();
         $main.show();
     });
 
     // ── Cronologia ────────────────────────────────────────────────
-    $('#sitegenie-history-btn').on('click', function () {
+    $('#jeenie-history-btn').on('click', function () {
         $main.hide();
         $histPanel.show();
         loadConversations();
     });
 
-    $('#sitegenie-history-back').on('click', function () {
+    $('#jeenie-history-back').on('click', function () {
         $histPanel.hide();
         $main.show();
     });
 
     // Click su conversazione
-    $(document).on('click', '.sitegenie-conv-item', function () {
+    $(document).on('click', '.jeenie-conv-item', function () {
         var convId = $(this).data('id');
         loadConversation(convId);
     });
 
     // Elimina conversazione
-    $(document).on('click', '.sitegenie-conv-delete', function (e) {
+    $(document).on('click', '.jeenie-conv-delete', function (e) {
         e.stopPropagation();
-        var convId = $(this).closest('.sitegenie-conv-item').data('id');
+        var convId = $(this).closest('.jeenie-conv-item').data('id');
         if (!confirm('Eliminare questa conversazione?')) return;
 
-        $.post(sitegenie_chat.ajax_url, {
-            action: 'sitegenie_delete_conversation',
-            nonce: sitegenie_chat.nonce,
+        $.post(jeenie_chat.ajax_url, {
+            action: 'jeenie_delete_conversation',
+            nonce: jeenie_chat.nonce,
             conversation_id: convId,
         }).done(function () {
             if (currentConversationId === convId) {
-                $('#sitegenie-new-chat-btn').click();
+                $('#jeenie-new-chat-btn').click();
             }
             loadConversations();
         });
@@ -121,9 +121,9 @@ jQuery(function ($) {
 
     function loadConversations() {
         $histList.html('<div class="text-center p-3 text-muted small"><i class="fa-solid fa-spinner fa-spin"></i></div>');
-        $.post(sitegenie_chat.ajax_url, {
-            action: 'sitegenie_get_conversations',
-            nonce: sitegenie_chat.nonce,
+        $.post(jeenie_chat.ajax_url, {
+            action: 'jeenie_get_conversations',
+            nonce: jeenie_chat.nonce,
         }).done(function (res) {
             if (!res.success || !res.data.length) {
                 $histList.html('<div class="text-center p-3 text-muted small">Nessuna conversazione.</div>');
@@ -131,12 +131,12 @@ jQuery(function ($) {
             }
             var html = '';
             res.data.forEach(function (c) {
-                var active = (c.id == currentConversationId) ? ' sitegenie-conv-active' : '';
-                html += '<div class="sitegenie-conv-item' + active + '" data-id="' + c.id + '">'
-                    + '<div class="sitegenie-conv-title">' + escHtml(c.title) + '</div>'
-                    + '<div class="sitegenie-conv-meta">'
+                var active = (c.id == currentConversationId) ? ' jeenie-conv-active' : '';
+                html += '<div class="jeenie-conv-item' + active + '" data-id="' + c.id + '">'
+                    + '<div class="jeenie-conv-title">' + escHtml(c.title) + '</div>'
+                    + '<div class="jeenie-conv-meta">'
                     + '<small>' + c.message_count + ' msg</small>'
-                    + '<button class="sitegenie-conv-delete" title="Elimina"><i class="fa-solid fa-trash-can fa-xs"></i></button>'
+                    + '<button class="jeenie-conv-delete" title="Elimina"><i class="fa-solid fa-trash-can fa-xs"></i></button>'
                     + '</div></div>';
             });
             $histList.html(html);
@@ -144,16 +144,16 @@ jQuery(function ($) {
     }
 
     function loadConversation(convId) {
-        $.post(sitegenie_chat.ajax_url, {
-            action: 'sitegenie_load_conversation',
-            nonce: sitegenie_chat.nonce,
+        $.post(jeenie_chat.ajax_url, {
+            action: 'jeenie_load_conversation',
+            nonce: jeenie_chat.nonce,
             conversation_id: convId,
         }).done(function (res) {
             if (!res.success) return;
 
             currentConversationId = convId;
             $messages.empty();
-            $('.sitegenie-chat-suggestions').hide();
+            $('.jeenie-chat-suggestions').hide();
 
             res.data.messages.forEach(function (m) {
                 appendMessage(m.content, m.role === 'user' ? 'user' : 'ai');
@@ -173,7 +173,7 @@ jQuery(function ($) {
         var msg = $input.val().trim();
         if (!msg) return;
 
-        $('.sitegenie-chat-suggestions').hide();
+        $('.jeenie-chat-suggestions').hide();
         appendMessage(msg, 'user');
         $input.val('').prop('disabled', true);
         $send.prop('disabled', true);
@@ -182,8 +182,8 @@ jQuery(function ($) {
 
         // Costruisci URL SSE con parametri GET
         var params = new URLSearchParams({
-            action: 'sitegenie_chat_stream',
-            nonce: sitegenie_chat.nonce,
+            action: 'jeenie_chat_stream',
+            nonce: jeenie_chat.nonce,
             message: msg,
             conversation_id: currentConversationId,
         });
@@ -192,7 +192,7 @@ jQuery(function ($) {
         var pageContext = getPageContext();
         if (pageContext) params.set('page_context', pageContext);
 
-        var url = sitegenie_chat.ajax_url + '?' + params.toString();
+        var url = jeenie_chat.ajax_url + '?' + params.toString();
 
         var $aiMsg = null;
         var fullText = '';
@@ -246,7 +246,7 @@ jQuery(function ($) {
                         if (data.chunk) {
                             fullText += data.chunk;
                             if (!$aiMsg) {
-                                $aiMsg = $('<div>').addClass('sitegenie-chat-message sitegenie-chat-message--ai');
+                                $aiMsg = $('<div>').addClass('jeenie-chat-message jeenie-chat-message--ai');
                                 $messages.append($aiMsg);
                             }
                             if (typeof marked !== 'undefined') {
@@ -278,7 +278,7 @@ jQuery(function ($) {
 
     // ── Helpers ───────────────────────────────────────────────────
     function appendMessage(text, type) {
-        var $msg = $('<div>').addClass('sitegenie-chat-message sitegenie-chat-message--' + type);
+        var $msg = $('<div>').addClass('jeenie-chat-message jeenie-chat-message--' + type);
         if (type === 'ai' && typeof marked !== 'undefined') {
             $msg.html(marked.parse(text));
         } else {
@@ -290,7 +290,7 @@ jQuery(function ($) {
     }
 
     function appendBadge(html) {
-        var $badge = $('<div class="sitegenie-action-badge">').html(html);
+        var $badge = $('<div class="jeenie-action-badge">').html(html);
         $messages.append($badge);
         scrollToBottom();
     }
@@ -331,13 +331,13 @@ jQuery(function ($) {
     }
 
     function showToast(label, editUrl) {
-        var html = '<div class="sitegenie-toast-content">' + label;
+        var html = '<div class="jeenie-toast-content">' + label;
         if (editUrl) html += ' <a href="' + editUrl + '" target="_blank">Apri nell\'editor →</a>';
-        html += '</div><button class="sitegenie-toast-close">&times;</button>';
-        var $toast = $('<div class="sitegenie-toast">').html(html).appendTo('body');
-        $toast.find('.sitegenie-toast-close').on('click', function () { $toast.remove(); });
-        setTimeout(function () { $toast.addClass('sitegenie-toast--visible'); }, 10);
-        setTimeout(function () { $toast.removeClass('sitegenie-toast--visible'); setTimeout(function () { $toast.remove(); }, 300); }, 5000);
+        html += '</div><button class="jeenie-toast-close">&times;</button>';
+        var $toast = $('<div class="jeenie-toast">').html(html).appendTo('body');
+        $toast.find('.jeenie-toast-close').on('click', function () { $toast.remove(); });
+        setTimeout(function () { $toast.addClass('jeenie-toast--visible'); }, 10);
+        setTimeout(function () { $toast.removeClass('jeenie-toast--visible'); setTimeout(function () { $toast.remove(); }, 300); }, 5000);
     }
 
     // ── Persistenza sessionStorage ────────────────────────────────
@@ -352,9 +352,9 @@ jQuery(function ($) {
         var ordered = [];
         $messages.children().each(function () {
             var $el = $(this);
-            if ($el.hasClass('sitegenie-chat-message--user'))     ordered.push({ type: 'user', text: $el.text() });
-            else if ($el.hasClass('sitegenie-chat-message--ai'))  ordered.push({ type: 'ai', html: $el.html() });
-            else if ($el.hasClass('sitegenie-action-badge'))      ordered.push({ type: 'badge', html: $el.html() });
+            if ($el.hasClass('jeenie-chat-message--user'))     ordered.push({ type: 'user', text: $el.text() });
+            else if ($el.hasClass('jeenie-chat-message--ai'))  ordered.push({ type: 'ai', html: $el.html() });
+            else if ($el.hasClass('jeenie-action-badge'))      ordered.push({ type: 'badge', html: $el.html() });
         });
         sessionStorage.setItem(STORAGE_KEY_MESSAGES, JSON.stringify(ordered));
     }
@@ -370,12 +370,12 @@ jQuery(function ($) {
             if (!parsed.length) return;
 
             $messages.empty();
-            $('.sitegenie-chat-suggestions').hide();
+            $('.jeenie-chat-suggestions').hide();
             parsed.forEach(function (m) {
                 if (m.type === 'badge') {
                     appendBadge(m.html);
                 } else if (m.type === 'ai' && m.html) {
-                    var $msg = $('<div>').addClass('sitegenie-chat-message sitegenie-chat-message--ai').html(m.html);
+                    var $msg = $('<div>').addClass('jeenie-chat-message jeenie-chat-message--ai').html(m.html);
                     $messages.append($msg);
                 } else {
                     appendMessage(m.text, m.type);
