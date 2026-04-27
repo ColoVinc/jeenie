@@ -4,7 +4,7 @@ if ( ! defined( 'ABSPATH' ) ) exit;
 /**
  * Connettore per Anthropic Claude API — con Tool Use
  */
-class SiteGenie_Claude extends SiteGenie_API_Connector {
+class Jeenie_Claude extends Jeenie_API_Connector {
 
     private $api_base = 'https://api.anthropic.com/v1/messages';
 
@@ -22,7 +22,7 @@ class SiteGenie_Claude extends SiteGenie_API_Connector {
         $response = $this->http_post( $this->api_base, $body, $this->auth_headers() );
 
         if ( ! $response['success'] ) {
-            SiteGenie_Logger::log( 'claude', 0, 0, 'error', $response['error'] );
+            Jeenie_Logger::log( 'claude', 0, 0, 'error', $response['error'] );
             return $this->format_error( $response['error'], $response['code'] );
         }
 
@@ -30,13 +30,13 @@ class SiteGenie_Claude extends SiteGenie_API_Connector {
         $text = $data['content'][0]['text'] ?? '';
 
         if ( empty( $text ) ) {
-            SiteGenie_Logger::log( 'claude', 0, 0, 'error', 'Risposta vuota.' );
+            Jeenie_Logger::log( 'claude', 0, 0, 'error', 'Risposta vuota.' );
             return $this->format_error( 'Risposta vuota da Claude.' );
         }
 
         $pt = $data['usage']['input_tokens']  ?? 0;
         $ct = $data['usage']['output_tokens'] ?? 0;
-        SiteGenie_Logger::log( 'claude', $pt, $ct, 'success' );
+        Jeenie_Logger::log( 'claude', $pt, $ct, 'success' );
 
         return $this->format_response( $text, $pt, $ct );
     }
@@ -72,7 +72,7 @@ class SiteGenie_Claude extends SiteGenie_API_Connector {
             $response = $this->http_post( $this->api_base, $body, $this->auth_headers() );
 
             if ( ! $response['success'] ) {
-                SiteGenie_Logger::log( 'claude', $total_pt, $total_ct, 'error', $response['error'] );
+                Jeenie_Logger::log( 'claude', $total_pt, $total_ct, 'error', $response['error'] );
                 return $this->format_error( $response['error'], $response['code'] );
             }
 
@@ -87,7 +87,7 @@ class SiteGenie_Claude extends SiteGenie_API_Connector {
             if ( empty( $tool_uses ) ) {
                 $text_block = array_filter( $content, fn( $b ) => $b['type'] === 'text' );
                 $text = ! empty( $text_block ) ? reset( $text_block )['text'] : 'Operazione completata.';
-                SiteGenie_Logger::log( 'claude', $total_pt, $total_ct, 'success' );
+                Jeenie_Logger::log( 'claude', $total_pt, $total_ct, 'success' );
                 $result = $this->format_response( $text, $total_pt, $total_ct );
                 if ( $last_action ) $result['action_taken'] = $last_action;
                 return $result;
@@ -101,7 +101,7 @@ class SiteGenie_Claude extends SiteGenie_API_Connector {
             foreach ( $tool_uses as $tu ) {
                 $tool_name   = $tu['name'];
                 $tool_args   = $tu['input'] ?? [];
-                $tool_result = SiteGenie_Tools::execute( $tool_name, $tool_args );
+                $tool_result = Jeenie_Tools::execute( $tool_name, $tool_args );
 
                 if ( in_array( $tool_name, [ 'create_post', 'update_post', 'delete_post', 'create_custom_post', 'update_custom_post', 'moderate_comment', 'reply_comment', 'update_site_settings', 'create_user', 'create_product', 'add_menu_item', 'create_component' ] ) ) {
                     $last_action = [ 'tool' => $tool_name, 'result' => $tool_result ];
@@ -117,7 +117,7 @@ class SiteGenie_Claude extends SiteGenie_API_Connector {
         }
 
         $fallback = $last_action['result']['message'] ?? 'Operazione completata.';
-        SiteGenie_Logger::log( 'claude', $total_pt, $total_ct, 'success' );
+        Jeenie_Logger::log( 'claude', $total_pt, $total_ct, 'success' );
         $result = $this->format_response( $fallback, $total_pt, $total_ct );
         if ( $last_action ) $result['action_taken'] = $last_action;
         return $result;
@@ -131,7 +131,7 @@ class SiteGenie_Claude extends SiteGenie_API_Connector {
     }
 
     private function build_system_prompt(): string {
-        $system = SiteGenie_Admin::get_site_context();
+        $system = Jeenie_Admin::get_site_context();
         $system .= "\n\nSei un assistente AI integrato nel pannello di amministrazione WordPress. ";
         $system .= "Puoi eseguire azioni reali sul sito usando i tool disponibili. ";
         $system .= "Quando l'utente chiede di creare, modificare, eliminare o recuperare contenuti, usa SEMPRE i tool appropriati. NON chiedere mai all'utente di eseguire comandi o tool. ";
@@ -143,7 +143,7 @@ class SiteGenie_Claude extends SiteGenie_API_Connector {
 
     private function convert_tools(): array {
         $tools = [];
-        foreach ( SiteGenie_Tools::get_declarations() as $decl ) {
+        foreach ( Jeenie_Tools::get_declarations() as $decl ) {
             $params = $decl['parameters'] ?? [];
             if ( $params instanceof \stdClass ) {
                 $params = [ 'type' => 'object', 'properties' => new \stdClass() ];
@@ -196,7 +196,7 @@ class SiteGenie_Claude extends SiteGenie_API_Connector {
             }
         });
 
-        SiteGenie_Logger::log( 'claude', $total_pt, $total_ct, 'success' );
+        Jeenie_Logger::log( 'claude', $total_pt, $total_ct, 'success' );
         echo "data: [DONE]\n\n";
     }
 
