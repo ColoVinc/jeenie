@@ -52,7 +52,7 @@ class Jeenie_Core {
     public function add_privacy_policy() {
         if ( ! function_exists( 'wp_add_privacy_policy_content' ) ) return;
 
-        $content = __( 'Questo sito utilizza il plugin Jeenie, che invia i messaggi della chat e il contesto del sito (nome, settore, tono di comunicazione) al provider AI selezionato dall\'amministratore (Google Gemini, OpenAI o Anthropic Claude) per generare risposte. Nessun dato viene inviato finché un utente non utilizza attivamente la chat o le funzionalità di generazione contenuti. Le conversazioni vengono salvate nel database del sito. Per maggiori informazioni, consulta le privacy policy dei rispettivi provider.', 'jeenie-ai-assistant' );
+        $content = __( 'Questo sito utilizza il plugin Jeenie, che invia i messaggi della chat e il contesto del sito (nome, settore, tono di comunicazione) al provider AI selezionato dall\'amministratore (Google Gemini, OpenAI o Anthropic Claude) per generare risposte. Nessun dato viene inviato finché un utente non utilizza attivamente la chat o le funzionalità di generazione contenuti. Le conversazioni vengono salvate nel database del sito. Per maggiori informazioni, consulta le privacy policy dei rispettivi provider.', 'jeenie' );
 
         wp_add_privacy_policy_content( 'Jeenie', wp_kses_post( wpautop( $content ) ) );
     }
