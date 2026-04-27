@@ -4,7 +4,7 @@ if ( ! defined( 'ABSPATH' ) ) exit;
 /**
  * Classe Admin — gestisce il pannello di impostazioni nel WP Admin
  */
-class SiteGenie_Admin {
+class Jeenie_Admin {
 
     private static $instance = null;
 
@@ -21,14 +21,14 @@ class SiteGenie_Admin {
         add_action( 'admin_enqueue_scripts', [ $this, 'enqueue_assets' ] );
         add_action( 'admin_notices', [ $this, 'activation_notice' ] );
         add_action( 'admin_notices', [ $this, 'missing_key_notice' ] );
-        add_action( 'wp_ajax_sitegenie_test_api', [ $this, 'ajax_test_api' ] );
-        add_action( 'wp_ajax_sitegenie_clear_logs', [ $this, 'ajax_clear_logs' ] );
-        add_action( 'wp_ajax_sitegenie_upload_knowledge', [ $this, 'ajax_upload_knowledge' ] );
-        add_action( 'wp_ajax_sitegenie_delete_knowledge', [ $this, 'ajax_delete_knowledge' ] );
-        add_action( 'wp_ajax_sitegenie_index_posts', [ $this, 'ajax_index_posts' ] );
-        add_action( 'wp_ajax_sitegenie_generate_alt', [ $this, 'ajax_generate_alt' ] );
-        add_action( 'wp_ajax_sitegenie_toggle_component', [ $this, 'ajax_toggle_component' ] );
-        add_action( 'wp_ajax_sitegenie_delete_component', [ $this, 'ajax_delete_component' ] );
+        add_action( 'wp_ajax_jeenie_test_api', [ $this, 'ajax_test_api' ] );
+        add_action( 'wp_ajax_jeenie_clear_logs', [ $this, 'ajax_clear_logs' ] );
+        add_action( 'wp_ajax_jeenie_upload_knowledge', [ $this, 'ajax_upload_knowledge' ] );
+        add_action( 'wp_ajax_jeenie_delete_knowledge', [ $this, 'ajax_delete_knowledge' ] );
+        add_action( 'wp_ajax_jeenie_index_posts', [ $this, 'ajax_index_posts' ] );
+        add_action( 'wp_ajax_jeenie_generate_alt', [ $this, 'ajax_generate_alt' ] );
+        add_action( 'wp_ajax_jeenie_toggle_component', [ $this, 'ajax_toggle_component' ] );
+        add_action( 'wp_ajax_jeenie_delete_component', [ $this, 'ajax_delete_component' ] );
         add_filter( 'attachment_fields_to_edit', [ $this, 'add_alt_button_to_media' ], 10, 2 );
     }
 
@@ -36,26 +36,26 @@ class SiteGenie_Admin {
      * Notice dopo attivazione plugin
      */
     public function activation_notice() {
-        if ( ! get_transient( 'sitegenie_activated' ) ) return;
-        delete_transient( 'sitegenie_activated' );
-        $url = admin_url( 'admin.php?page=sitegenie' );
-        echo '<div class="notice notice-success is-dismissible"><p><strong>🤖 ' . esc_html__( 'SiteGenie attivato!', 'sitegenie' ) . '</strong> <a href="' . esc_url( $url ) . '">' . esc_html__( 'Configura la tua API key', 'sitegenie' ) . '</a> ' . esc_html__( 'per iniziare.', 'sitegenie' ) . '</p></div>';
+        if ( ! get_transient( 'jeenie_activated' ) ) return;
+        delete_transient( 'jeenie_activated' );
+        $url = admin_url( 'admin.php?page=jeenie' );
+        echo '<div class="notice notice-success is-dismissible"><p><strong>🤖 ' . esc_html__( 'Jeenie attivato!', 'jeenie-ai-assistant' ) . '</strong> <a href="' . esc_url( $url ) . '">' . esc_html__( 'Configura la tua API key', 'jeenie-ai-assistant' ) . '</a> ' . esc_html__( 'per iniziare.', 'jeenie-ai-assistant' ) . '</p></div>';
     }
 
     /**
      * Notice se nessuna API key è configurata
      */
     public function missing_key_notice() {
-        if ( get_transient( 'sitegenie_activated' ) ) return;
+        if ( get_transient( 'jeenie_activated' ) ) return;
         $screen = get_current_screen();
-        if ( $screen && strpos( $screen->id, 'sitegenie' ) !== false ) return;
+        if ( $screen && strpos( $screen->id, 'jeenie' ) !== false ) return;
 
-        $provider = get_option( 'sitegenie_default_provider', 'gemini' );
-        $key      = get_option( 'sitegenie_' . $provider . '_api_key', '' );
+        $provider = get_option( 'jeenie_default_provider', 'gemini' );
+        $key      = get_option( 'jeenie_' . $provider . '_api_key', '' );
         if ( ! empty( $key ) ) return;
 
-        $url = admin_url( 'admin.php?page=sitegenie' );
-        echo '<div class="notice notice-warning is-dismissible"><p><strong>🤖 SiteGenie:</strong> ' . esc_html__( 'API key non configurata.', 'sitegenie' ) . ' <a href="' . esc_url( $url ) . '">' . esc_html__( 'Vai alle impostazioni', 'sitegenie' ) . '</a>.</p></div>';
+        $url = admin_url( 'admin.php?page=jeenie' );
+        echo '<div class="notice notice-warning is-dismissible"><p><strong>🤖 Jeenie:</strong> ' . esc_html__( 'API key non configurata.', 'jeenie-ai-assistant' ) . ' <a href="' . esc_url( $url ) . '">' . esc_html__( 'Vai alle impostazioni', 'jeenie-ai-assistant' ) . '</a>.</p></div>';
     }
 
     /**
@@ -63,48 +63,48 @@ class SiteGenie_Admin {
      */
     public function register_menu() {
         add_menu_page(
-            'SiteGenie',
-            'SiteGenie',
+            'Jeenie',
+            'Jeenie',
             'manage_options',
-            'sitegenie',
+            'jeenie',
             [ $this, 'render_settings_page' ],
             'dashicons-superhero',
             30
         );
 
         add_submenu_page(
-            'sitegenie',
+            'jeenie',
             'Impostazioni',
             'Impostazioni',
             'manage_options',
-            'sitegenie',
+            'jeenie',
             [ $this, 'render_settings_page' ]
         );
 
         add_submenu_page(
-            'sitegenie',
+            'jeenie',
             'Log Chiamate',
             'Log Chiamate',
             'manage_options',
-            'sitegenie-logs',
+            'jeenie-logs',
             [ $this, 'render_logs_page' ]
         );
 
         add_submenu_page(
-            'sitegenie',
+            'jeenie',
             'Knowledge Base',
             'Knowledge Base',
             'manage_options',
-            'sitegenie-knowledge',
+            'jeenie-knowledge',
             [ $this, 'render_knowledge_page' ]
         );
 
         add_submenu_page(
-            'sitegenie',
+            'jeenie',
             'Componenti',
             'Componenti',
             'manage_options',
-            'sitegenie-components',
+            'jeenie-components',
             [ $this, 'render_components_page' ]
         );
     }
@@ -114,75 +114,75 @@ class SiteGenie_Admin {
      */
     public function register_settings() {
         // Gruppo impostazioni API
-        register_setting( 'sitegenie_settings', 'sitegenie_gemini_api_key', [
+        register_setting( 'jeenie_settings', 'jeenie_gemini_api_key', [
             'sanitize_callback' => 'sanitize_text_field',
         ]);
-        register_setting( 'sitegenie_settings', 'sitegenie_openai_api_key', [
+        register_setting( 'jeenie_settings', 'jeenie_openai_api_key', [
             'sanitize_callback' => 'sanitize_text_field',
         ]);
-        register_setting( 'sitegenie_settings', 'sitegenie_default_provider', [
+        register_setting( 'jeenie_settings', 'jeenie_default_provider', [
             'sanitize_callback' => 'sanitize_text_field',
             'default'           => 'gemini',
         ]);
-        register_setting( 'sitegenie_settings', 'sitegenie_gemini_model', [
+        register_setting( 'jeenie_settings', 'jeenie_gemini_model', [
             'sanitize_callback' => 'sanitize_text_field',
             'default'           => 'gemini-2.0-flash',
         ]);
-        register_setting( 'sitegenie_settings', 'sitegenie_openai_model', [
+        register_setting( 'jeenie_settings', 'jeenie_openai_model', [
             'sanitize_callback' => 'sanitize_text_field',
             'default'           => 'gpt-5.4-mini',
         ]);
-        register_setting( 'sitegenie_settings', 'sitegenie_claude_api_key', [
+        register_setting( 'jeenie_settings', 'jeenie_claude_api_key', [
             'sanitize_callback' => 'sanitize_text_field',
         ]);
-        register_setting( 'sitegenie_settings', 'sitegenie_claude_model', [
+        register_setting( 'jeenie_settings', 'jeenie_claude_model', [
             'sanitize_callback' => 'sanitize_text_field',
             'default'           => 'claude-sonnet-4-6',
         ]);
-        register_setting( 'sitegenie_settings', 'sitegenie_groq_api_key', [
+        register_setting( 'jeenie_settings', 'jeenie_groq_api_key', [
             'sanitize_callback' => 'sanitize_text_field',
         ]);
-        register_setting( 'sitegenie_settings', 'sitegenie_groq_model', [
+        register_setting( 'jeenie_settings', 'jeenie_groq_model', [
             'sanitize_callback' => 'sanitize_text_field',
             'default'           => 'llama-3.3-70b-versatile',
         ]);
-        register_setting( 'sitegenie_settings', 'sitegenie_rate_limit', [
+        register_setting( 'jeenie_settings', 'jeenie_rate_limit', [
             'sanitize_callback' => 'absint',
             'default'           => 30,
         ]);
-        register_setting( 'sitegenie_settings', 'sitegenie_auto_delete_days', [
+        register_setting( 'jeenie_settings', 'jeenie_auto_delete_days', [
             'sanitize_callback' => 'absint',
             'default'           => 0,
         ]);
-        register_setting( 'sitegenie_settings', 'sitegenie_api_timeout', [
+        register_setting( 'jeenie_settings', 'jeenie_api_timeout', [
             'sanitize_callback' => 'absint',
             'default'           => 30,
         ]);
 
         // Gruppo knowledge base (settings group separato)
-        register_setting( 'sitegenie_knowledge_settings', 'sitegenie_knowledge_enabled', [
+        register_setting( 'jeenie_knowledge_settings', 'jeenie_knowledge_enabled', [
             'sanitize_callback' => 'absint',
             'default'           => 1,
         ]);
-        register_setting( 'sitegenie_knowledge_settings', 'sitegenie_knowledge_max_chars', [
+        register_setting( 'jeenie_knowledge_settings', 'jeenie_knowledge_max_chars', [
             'sanitize_callback' => 'absint',
             'default'           => 1500,
         ]);
 
         // Gruppo contesto sito
-        register_setting( 'sitegenie_settings', 'sitegenie_site_name', [
+        register_setting( 'jeenie_settings', 'jeenie_site_name', [
             'sanitize_callback' => 'sanitize_text_field',
         ]);
-        register_setting( 'sitegenie_settings', 'sitegenie_site_sector', [
+        register_setting( 'jeenie_settings', 'jeenie_site_sector', [
             'sanitize_callback' => 'sanitize_text_field',
         ]);
-        register_setting( 'sitegenie_settings', 'sitegenie_site_tone', [
+        register_setting( 'jeenie_settings', 'jeenie_site_tone', [
             'sanitize_callback' => 'sanitize_text_field',
         ]);
-        register_setting( 'sitegenie_settings', 'sitegenie_site_target', [
+        register_setting( 'jeenie_settings', 'jeenie_site_target', [
             'sanitize_callback' => 'sanitize_text_field',
         ]);
-        register_setting( 'sitegenie_settings', 'sitegenie_site_description', [
+        register_setting( 'jeenie_settings', 'jeenie_site_description', [
             'sanitize_callback' => 'sanitize_textarea_field',
         ]);
     }
@@ -192,42 +192,42 @@ class SiteGenie_Admin {
      */
     public function enqueue_assets( $hook ) {
         // Script per il bottone alt text nella modale media (tutte le pagine admin)
-        wp_enqueue_script( 'sitegenie-media-alt', SITEGENIE_PLUGIN_URL . 'assets/js/media-alt.js', [ 'jquery' ], SITEGENIE_VERSION, true );
-        wp_localize_script( 'sitegenie-media-alt', 'sitegenie_alt', [
+        wp_enqueue_script( 'jeenie-media-alt', JEENIE_PLUGIN_URL . 'assets/js/media-alt.js', [ 'jquery' ], JEENIE_VERSION, true );
+        wp_localize_script( 'jeenie-media-alt', 'jeenie_alt', [
             'ajax_url' => admin_url( 'admin-ajax.php' ),
-            'nonce'    => wp_create_nonce( 'sitegenie_nonce' ),
+            'nonce'    => wp_create_nonce( 'jeenie_nonce' ),
         ]);
 
-        if ( strpos( $hook, 'sitegenie' ) === false ) return;
+        if ( strpos( $hook, 'jeenie' ) === false ) return;
 
         // Chart.js per la pagina log
-        if ( strpos( $hook, 'sitegenie-logs' ) !== false ) {
-            wp_enqueue_script( 'chartjs', SITEGENIE_PLUGIN_URL . 'assets/vendor/chart.min.js', [], '4.4.7', true );
+        if ( strpos( $hook, 'jeenie-logs' ) !== false ) {
+            wp_enqueue_script( 'chartjs', JEENIE_PLUGIN_URL . 'assets/vendor/chart.min.js', [], '4.4.7', true );
         }
 
-        // Bootstrap solo nelle pagine SiteGenie (settings, logs, knowledge)
-        wp_enqueue_style( 'bootstrap', SITEGENIE_PLUGIN_URL . 'assets/vendor/bootstrap.min.css', [], '5.3.3' );
-        wp_enqueue_script( 'bootstrap', SITEGENIE_PLUGIN_URL . 'assets/vendor/bootstrap.bundle.min.js', [], '5.3.3', true );
+        // Bootstrap solo nelle pagine Jeenie (settings, logs, knowledge)
+        wp_enqueue_style( 'bootstrap', JEENIE_PLUGIN_URL . 'assets/vendor/bootstrap.min.css', [], '5.3.3' );
+        wp_enqueue_script( 'bootstrap', JEENIE_PLUGIN_URL . 'assets/vendor/bootstrap.bundle.min.js', [], '5.3.3', true );
 
         wp_enqueue_style(
-            'sitegenie-admin',
-            SITEGENIE_PLUGIN_URL . 'assets/css/admin.css',
+            'jeenie-admin',
+            JEENIE_PLUGIN_URL . 'assets/css/admin.css',
             [],
-            SITEGENIE_VERSION
+            JEENIE_VERSION
         );
 
         wp_enqueue_script(
-            'sitegenie-admin',
-            SITEGENIE_PLUGIN_URL . 'assets/js/admin.js',
+            'jeenie-admin',
+            JEENIE_PLUGIN_URL . 'assets/js/admin.js',
             [ 'jquery' ],
-            SITEGENIE_VERSION,
+            JEENIE_VERSION,
             true
         );
 
         // Passa dati PHP → JS
-        wp_localize_script( 'sitegenie-admin', 'sitegenie', [
+        wp_localize_script( 'jeenie-admin', 'jeenie', [
             'ajax_url' => admin_url( 'admin-ajax.php' ),
-            'nonce'    => wp_create_nonce( 'sitegenie_nonce' ),
+            'nonce'    => wp_create_nonce( 'jeenie_nonce' ),
         ]);
     }
 
@@ -235,7 +235,7 @@ class SiteGenie_Admin {
      * Renderizza la pagina impostazioni
      */
     public function render_settings_page() {
-        require_once SITEGENIE_PLUGIN_DIR . 'templates/settings-page.php';
+        require_once JEENIE_PLUGIN_DIR . 'templates/settings-page.php';
     }
 
     /**
@@ -244,31 +244,31 @@ class SiteGenie_Admin {
     public function render_logs_page() {
         $per_page    = 30;
         $current     = isset( $_GET['paged'] ) ? absint( $_GET['paged'] ) : 1; // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- pagination, read-only
-        $total_items = SiteGenie_Logger::count_logs();
+        $total_items = Jeenie_Logger::count_logs();
         $total_pages = max( 1, ceil( $total_items / $per_page ) );
-        $logs        = SiteGenie_Logger::get_logs( $per_page, $current );
-        $stats       = SiteGenie_Logger::get_stats();
-        $daily_stats    = SiteGenie_Logger::get_daily_stats( 30 );
-        $provider_stats = SiteGenie_Logger::get_provider_stats();
-        require_once SITEGENIE_PLUGIN_DIR . 'templates/logs-page.php';
+        $logs        = Jeenie_Logger::get_logs( $per_page, $current );
+        $stats       = Jeenie_Logger::get_stats();
+        $daily_stats    = Jeenie_Logger::get_daily_stats( 30 );
+        $provider_stats = Jeenie_Logger::get_provider_stats();
+        require_once JEENIE_PLUGIN_DIR . 'templates/logs-page.php';
     }
 
     /**
      * AJAX: testa la connessione API
      */
     public function ajax_test_api() {
-        check_ajax_referer( 'sitegenie_nonce', 'nonce' );
+        check_ajax_referer( 'jeenie_nonce', 'nonce' );
 
         if ( ! current_user_can( 'manage_options' ) ) {
-            wp_send_json_error( __( 'Permessi insufficienti.', 'sitegenie' ) );
+            wp_send_json_error( __( 'Permessi insufficienti.', 'jeenie-ai-assistant' ) );
         }
 
         $connector = self::get_connector();
         if ( ! $connector ) {
-            wp_send_json_error( __( 'API key non configurata.', 'sitegenie' ) );
+            wp_send_json_error( __( 'API key non configurata.', 'jeenie-ai-assistant' ) );
         }
 
-        $response = $connector->generate( 'Rispondi solo con: "SiteGenie connesso correttamente!"' );
+        $response = $connector->generate( 'Rispondi solo con: "Jeenie connesso correttamente!"' );
 
         if ( $response['success'] ) {
             wp_send_json_success( $response['text'] );
@@ -281,13 +281,13 @@ class SiteGenie_Admin {
      * AJAX: svuota tutti i log
      */
     public function ajax_clear_logs() {
-        check_ajax_referer( 'sitegenie_nonce', 'nonce' );
+        check_ajax_referer( 'jeenie_nonce', 'nonce' );
 
         if ( ! current_user_can( 'manage_options' ) ) {
             wp_send_json_error( 'Permessi insufficienti.' );
         }
 
-        SiteGenie_Logger::clear_logs();
+        Jeenie_Logger::clear_logs();
         wp_send_json_success( 'Log svuotati.' );
     }
 
@@ -295,11 +295,11 @@ class SiteGenie_Admin {
      * Recupera il contesto del sito da usare nei prompt
      */
     public static function get_site_context(): string {
-        $name        = get_option( 'sitegenie_site_name', get_bloginfo('name') );
-        $sector      = get_option( 'sitegenie_site_sector', '' );
-        $tone        = get_option( 'sitegenie_site_tone', '' );
-        $target      = get_option( 'sitegenie_site_target', '' );
-        $description = get_option( 'sitegenie_site_description', '' );
+        $name        = get_option( 'jeenie_site_name', get_bloginfo('name') );
+        $sector      = get_option( 'jeenie_site_sector', '' );
+        $tone        = get_option( 'jeenie_site_tone', '' );
+        $target      = get_option( 'jeenie_site_target', '' );
+        $description = get_option( 'jeenie_site_description', '' );
 
         $context = "Stai lavorando per il sito web chiamato \"$name\".";
         if ( $sector )      $context .= " Settore: $sector.";
@@ -314,37 +314,37 @@ class SiteGenie_Admin {
     /**
      * Crea e restituisce il connettore AI attivo
      */
-    public static function get_connector(): ?SiteGenie_API_Connector {
-        $provider = get_option( 'sitegenie_default_provider', 'gemini' );
+    public static function get_connector(): ?Jeenie_API_Connector {
+        $provider = get_option( 'jeenie_default_provider', 'gemini' );
 
         if ( $provider === 'openai' ) {
-            $api_key = get_option( 'sitegenie_openai_api_key', '' );
+            $api_key = get_option( 'jeenie_openai_api_key', '' );
             if ( empty( $api_key ) ) return null;
-            $connector = new SiteGenie_OpenAI( $api_key );
-            $connector->set_model( get_option( 'sitegenie_openai_model', 'gpt-5.4-mini' ) );
+            $connector = new Jeenie_OpenAI( $api_key );
+            $connector->set_model( get_option( 'jeenie_openai_model', 'gpt-5.4-mini' ) );
             return $connector;
         }
 
         if ( $provider === 'claude' ) {
-            $api_key = get_option( 'sitegenie_claude_api_key', '' );
+            $api_key = get_option( 'jeenie_claude_api_key', '' );
             if ( empty( $api_key ) ) return null;
-            $connector = new SiteGenie_Claude( $api_key );
-            $connector->set_model( get_option( 'sitegenie_claude_model', 'claude-sonnet-4-6' ) );
+            $connector = new Jeenie_Claude( $api_key );
+            $connector->set_model( get_option( 'jeenie_claude_model', 'claude-sonnet-4-6' ) );
             return $connector;
         }
 
         if ( $provider === 'groq' ) {
-            $api_key = get_option( 'sitegenie_groq_api_key', '' );
+            $api_key = get_option( 'jeenie_groq_api_key', '' );
             if ( empty( $api_key ) ) return null;
-            $connector = new SiteGenie_Groq( $api_key );
-            $connector->set_model( get_option( 'sitegenie_groq_model', 'llama-3.3-70b-versatile' ) );
+            $connector = new Jeenie_Groq( $api_key );
+            $connector->set_model( get_option( 'jeenie_groq_model', 'llama-3.3-70b-versatile' ) );
             return $connector;
         }
 
-        $api_key = get_option( 'sitegenie_gemini_api_key', '' );
+        $api_key = get_option( 'jeenie_gemini_api_key', '' );
         if ( empty( $api_key ) ) return null;
-        $connector = new SiteGenie_Gemini( $api_key );
-        $connector->set_model( get_option( 'sitegenie_gemini_model', 'gemini-2.5-flash-lite' ) );
+        $connector = new Jeenie_Gemini( $api_key );
+        $connector->set_model( get_option( 'jeenie_gemini_model', 'gemini-2.5-flash-lite' ) );
         return $connector;
     }
 
@@ -353,11 +353,11 @@ class SiteGenie_Admin {
      * Restituisce true se il limite è superato.
      */
     public static function is_rate_limited(): bool {
-        $limit = (int) get_option( 'sitegenie_rate_limit', 30 );
+        $limit = (int) get_option( 'jeenie_rate_limit', 30 );
         if ( $limit <= 0 ) return false; // 0 = disabilitato
 
         $user_id = get_current_user_id();
-        $key     = 'sitegenie_rl_' . $user_id;
+        $key     = 'jeenie_rl_' . $user_id;
         $count   = (int) get_transient( $key );
 
         if ( $count >= $limit ) return true;
@@ -370,15 +370,15 @@ class SiteGenie_Admin {
      * Renderizza la pagina Knowledge Base
      */
     public function render_knowledge_page() {
-        $documents = SiteGenie_Knowledge::get_documents();
-        require_once SITEGENIE_PLUGIN_DIR . 'templates/knowledge-page.php';
+        $documents = Jeenie_Knowledge::get_documents();
+        require_once JEENIE_PLUGIN_DIR . 'templates/knowledge-page.php';
     }
 
     /**
      * AJAX: carica un documento nella knowledge base
      */
     public function ajax_upload_knowledge() {
-        check_ajax_referer( 'sitegenie_nonce', 'nonce' );
+        check_ajax_referer( 'jeenie_nonce', 'nonce' );
         if ( ! current_user_can( 'manage_options' ) ) wp_send_json_error( 'Permessi insufficienti.' );
 
         $name    = sanitize_text_field( wp_unslash( $_POST['doc_name'] ?? '' ) );
@@ -388,7 +388,7 @@ class SiteGenie_Admin {
             wp_send_json_error( 'Nome e contenuto sono obbligatori.' );
         }
 
-        $chunks = SiteGenie_Knowledge::add_document( $name, $content );
+        $chunks = Jeenie_Knowledge::add_document( $name, $content );
         wp_send_json_success( [ 'chunks' => $chunks, 'message' => "Documento \"$name\" salvato ($chunks frammenti)." ] );
     }
 
@@ -396,13 +396,13 @@ class SiteGenie_Admin {
      * AJAX: elimina un documento dalla knowledge base
      */
     public function ajax_delete_knowledge() {
-        check_ajax_referer( 'sitegenie_nonce', 'nonce' );
+        check_ajax_referer( 'jeenie_nonce', 'nonce' );
         if ( ! current_user_can( 'manage_options' ) ) wp_send_json_error( 'Permessi insufficienti.' );
 
         $name = sanitize_text_field( wp_unslash( $_POST['doc_name'] ?? '' ) );
         if ( empty( $name ) ) wp_send_json_error( 'Nome documento mancante.' );
 
-        SiteGenie_Knowledge::delete_document( $name );
+        Jeenie_Knowledge::delete_document( $name );
         wp_send_json_success( 'Documento eliminato.' );
     }
 
@@ -410,10 +410,10 @@ class SiteGenie_Admin {
      * AJAX: indicizza tutti i post pubblicati
      */
     public function ajax_index_posts() {
-        check_ajax_referer( 'sitegenie_nonce', 'nonce' );
+        check_ajax_referer( 'jeenie_nonce', 'nonce' );
         if ( ! current_user_can( 'manage_options' ) ) wp_send_json_error( 'Permessi insufficienti.' );
 
-        $count = SiteGenie_Knowledge::index_all_posts();
+        $count = Jeenie_Knowledge::index_all_posts();
         wp_send_json_success( [ 'count' => $count, 'message' => "$count post indicizzati nella knowledge base." ] );
     }
 
@@ -423,10 +423,10 @@ class SiteGenie_Admin {
     public function add_alt_button_to_media( $form_fields, $post ) {
         if ( ! wp_attachment_is_image( $post->ID ) ) return $form_fields;
 
-        $form_fields['sitegenie_alt'] = [
+        $form_fields['jeenie_alt'] = [
             'label' => '',
             'input' => 'html',
-            'html'  => '<button type="button" class="button sitegenie-generate-alt" data-id="' . esc_attr( $post->ID ) . '">🤖 ' . esc_html__( 'Genera Alt Text con AI', 'sitegenie' ) . '</button>',
+            'html'  => '<button type="button" class="button jeenie-generate-alt" data-id="' . esc_attr( $post->ID ) . '">🤖 ' . esc_html__( 'Genera Alt Text con AI', 'jeenie-ai-assistant' ) . '</button>',
         ];
 
         return $form_fields;
@@ -436,7 +436,7 @@ class SiteGenie_Admin {
      * AJAX: genera alt text per un'immagine
      */
     public function ajax_generate_alt() {
-        check_ajax_referer( 'sitegenie_nonce', 'nonce' );
+        check_ajax_referer( 'jeenie_nonce', 'nonce' );
         if ( ! current_user_can( 'edit_posts' ) ) wp_send_json_error( 'Permessi insufficienti.' );
 
         $attachment_id = intval( $_POST['attachment_id'] ?? 0 );
@@ -474,15 +474,15 @@ class SiteGenie_Admin {
      * Renderizza la pagina Componenti
      */
     public function render_components_page() {
-        $components = SiteGenie_Components::get_all();
-        require_once SITEGENIE_PLUGIN_DIR . 'templates/components-page.php';
+        $components = Jeenie_Components::get_all();
+        require_once JEENIE_PLUGIN_DIR . 'templates/components-page.php';
     }
 
     /**
      * AJAX: toggle stato componente
      */
     public function ajax_toggle_component() {
-        check_ajax_referer( 'sitegenie_nonce', 'nonce' );
+        check_ajax_referer( 'jeenie_nonce', 'nonce' );
         if ( ! current_user_can( 'manage_options' ) ) wp_send_json_error( 'Permessi insufficienti.' );
 
         $slug   = sanitize_text_field( wp_unslash( $_POST['slug'] ?? '' ) );
@@ -490,9 +490,9 @@ class SiteGenie_Admin {
         if ( ! in_array( $status, [ 'active', 'inactive' ] ) ) wp_send_json_error( 'Stato non valido.' );
 
         if ( $slug === '__all__' ) {
-            SiteGenie_Components::deactivate_all();
+            Jeenie_Components::deactivate_all();
         } else {
-            SiteGenie_Components::set_status( $slug, $status );
+            Jeenie_Components::set_status( $slug, $status );
         }
         wp_send_json_success( 'Stato aggiornato.' );
     }
@@ -501,11 +501,11 @@ class SiteGenie_Admin {
      * AJAX: elimina componente
      */
     public function ajax_delete_component() {
-        check_ajax_referer( 'sitegenie_nonce', 'nonce' );
+        check_ajax_referer( 'jeenie_nonce', 'nonce' );
         if ( ! current_user_can( 'manage_options' ) ) wp_send_json_error( 'Permessi insufficienti.' );
 
         $slug = sanitize_text_field( wp_unslash( $_POST['slug'] ?? '' ) );
-        SiteGenie_Components::delete( $slug );
+        Jeenie_Components::delete( $slug );
         wp_send_json_success( 'Componente eliminato.' );
     }
 }
